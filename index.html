@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:var(--font-sans,system-ui,sans-serif)}
+body{background:var(--color-background-tertiary,#f5f5f3);display:flex;justify-content:center;align-items:flex-start;min-height:100vh;padding:24px 12px}
+.phone{width:375px;min-height:720px;background:var(--color-background-primary,#fff);border-radius:40px;border:1.5px solid var(--color-border-secondary,rgba(0,0,0,0.15));overflow:hidden;position:relative;display:flex;flex-direction:column}
+.status-bar{background:var(--color-background-primary,#fff);padding:12px 24px 6px;display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:500;color:var(--color-text-secondary)}
+.screen{flex:1;overflow-y:auto;display:flex;flex-direction:column}
+.nav-bar{background:var(--color-background-primary,#fff);border-top:0.5px solid var(--color-border-tertiary,rgba(0,0,0,0.1));display:flex;justify-content:space-around;padding:10px 0 16px}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px 12px;border-radius:8px;transition:background 0.15s}
+.nav-item:hover{background:var(--color-background-secondary)}
+.nav-icon{width:22px;height:22px;display:flex;align-items:center;justify-content:center}
+.nav-label{font-size:10px;color:var(--color-text-secondary)}
+.nav-item.active .nav-label{color:#185FA5;font-weight:500}
+.nav-item.active .nav-dot{background:#185FA5}
+.nav-dot{width:22px;height:3px;border-radius:2px;background:transparent}
+.header{padding:20px 20px 12px;border-bottom:0.5px solid var(--color-border-tertiary)}
+.header h1{font-size:22px;font-weight:500;color:var(--color-text-primary)}
+.header p{font-size:13px;color:var(--color-text-secondary);margin-top:2px}
+.content{padding:16px;flex:1;display:flex;flex-direction:column;gap:12px}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:14px;padding:14px 16px}
+.metric-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.metric{background:var(--color-background-secondary);border-radius:10px;padding:12px}
+.metric-label{font-size:12px;color:var(--color-text-secondary);margin-bottom:4px}
+.metric-value{font-size:22px;font-weight:500;color:var(--color-text-primary)}
+.metric-value.warn{color:#BA7517}
+.metric-value.danger{color:#A32D2D}
+.metric-value.good{color:#3B6D11}
+.section-label{font-size:12px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px}
+.list-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:0.5px solid var(--color-border-tertiary);cursor:pointer}
+.list-item:last-child{border-bottom:none}
+.avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;flex-shrink:0}
+.av-blue{background:#E6F1FB;color:#0C447C}
+.av-teal{background:#E1F5EE;color:#085041}
+.av-amber{background:#FAEEDA;color:#633806}
+.av-red{background:#FCEBEB;color:#791F1F}
+.av-purple{background:#EEEDFE;color:#3C3489}
+.item-info{flex:1;min-width:0}
+.item-name{font-size:14px;font-weight:500;color:var(--color-text-primary)}
+.item-sub{font-size:12px;color:var(--color-text-secondary);margin-top:2px}
+.item-right{text-align:right;flex-shrink:0}
+.item-val{font-size:13px;font-weight:500;color:var(--color-text-primary)}
+.item-badge{font-size:11px;padding:2px 8px;border-radius:6px;margin-top:3px;display:inline-block}
+.badge-green{background:#EAF3DE;color:#27500A}
+.badge-red{background:#FCEBEB;color:#791F1F}
+.badge-amber{background:#FAEEDA;color:#633806}
+.badge-blue{background:#E6F1FB;color:#0C447C}
+.badge-gray{background:#F1EFE8;color:#444441}
+.stars{color:#EF9F27;font-size:12px;letter-spacing:1px}
+.tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:6px;background:#F1EFE8;color:#444441;margin:2px 2px 0 0}
+.tag.blue{background:#E6F1FB;color:#185FA5}
+.tag.teal{background:#E1F5EE;color:#0F6E56}
+.tag.red{background:#FCEBEB;color:#A32D2D}
+.btn{display:block;width:100%;padding:13px;border-radius:12px;border:none;font-size:15px;font-weight:500;cursor:pointer;text-align:center;transition:opacity 0.15s}
+.btn:hover{opacity:0.85}
+.btn-primary{background:#185FA5;color:#fff}
+.btn-outline{background:transparent;border:0.5px solid var(--color-border-secondary);color:var(--color-text-primary)}
+.input-group{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.input-group label{font-size:13px;color:var(--color-text-secondary)}
+.input-group input,.input-group select,.input-group textarea{padding:10px 12px;border-radius:10px;border:0.5px solid var(--color-border-secondary);font-size:14px;background:var(--color-background-primary);color:var(--color-text-primary);width:100%}
+.input-group textarea{resize:none;height:70px}
+.flag-banner{background:#FAEEDA;border:0.5px solid #FAC775;border-radius:10px;padding:10px 14px;display:flex;gap:10px;align-items:flex-start}
+.flag-icon{font-size:16px;flex-shrink:0}
+.flag-text{font-size:12px;color:#633806;line-height:1.5}
+.retainer-badge{background:#FCEBEB;border:0.5px solid #F7C1C1;border-radius:10px;padding:10px 14px;display:flex;gap:10px;align-items:center}
+.retainer-text{font-size:12px;color:#791F1F;font-weight:500}
+.deal-stage{display:flex;align-items:center;gap:6px;margin-top:8px}
+.stage-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.stage-active{background:#185FA5}
+.stage-contract{background:#3B6D11}
+.stage-closed{background:#3B6D11}
+.stage-fallen{background:#A32D2D}
+.stage-pending{background:#BA7517}
+.stage-label{font-size:12px;color:var(--color-text-secondary)}
+.login-wrap{padding:32px 24px;display:flex;flex-direction:column;gap:16px;flex:1;justify-content:center}
+.login-logo{font-size:28px;font-weight:500;color:#185FA5;margin-bottom:8px;text-align:center}
+.login-sub{font-size:14px;color:var(--color-text-secondary);text-align:center;margin-bottom:8px}
+.divider{text-align:center;font-size:12px;color:var(--color-text-tertiary);margin:4px 0}
+.progress-bar{height:4px;background:var(--color-background-secondary);border-radius:2px;overflow:hidden;margin-top:6px}
+.progress-fill{height:100%;border-radius:2px;background:#185FA5;transition:width 0.3s}
+.free-tier{background:#E6F1FB;border-radius:10px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center}
+.free-tier-label{font-size:12px;color:#0C447C}
+.upgrade-btn{font-size:12px;background:#185FA5;color:#fff;padding:4px 12px;border-radius:6px;border:none;cursor:pointer;font-weight:500}
+.back-btn{font-size:13px;color:#185FA5;cursor:pointer;padding:4px 0;display:inline-block}
+.detail-hero{background:var(--color-background-secondary);padding:20px;display:flex;align-items:center;gap:14px;border-bottom:0.5px solid var(--color-border-tertiary)}
+.detail-avatar{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:500}
+.deal-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:0.5px solid var(--color-border-tertiary);font-size:13px}
+.deal-row:last-child{border-bottom:none}
+</style>
+</head>
+<body>
+<div class="phone" id="app">
+  <div class="status-bar"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+  <div class="screen" id="screen"></div>
+  <div class="nav-bar" id="nav" style="display:none">
+    <div class="nav-item" onclick="navigate('dashboard')" id="nav-dashboard">
+      <div class="nav-dot"></div>
+      <div class="nav-icon">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="7" height="7" rx="2" fill="currentColor" opacity="0.7"/><rect x="11" y="2" width="7" height="7" rx="2" fill="currentColor" opacity="0.7"/><rect x="2" y="11" width="7" height="7" rx="2" fill="currentColor" opacity="0.7"/><rect x="11" y="11" width="7" height="7" rx="2" fill="currentColor" opacity="0.7"/></svg>
+      </div>
+      <span class="nav-label">Dashboard</span>
+    </div>
+    <div class="nav-item" onclick="navigate('agents')" id="nav-agents">
+      <div class="nav-dot"></div>
+      <div class="nav-icon">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7" r="3.5" stroke="currentColor" stroke-width="1.5"/><path d="M3 17c0-3.866 3.134-7 7-7s7 3.134 7 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </div>
+      <span class="nav-label">Agents</span>
+    </div>
+    <div class="nav-item" onclick="navigate('clients')" id="nav-clients">
+      <div class="nav-dot"></div>
+      <div class="nav-icon">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="7" cy="7" r="3" stroke="currentColor" stroke-width="1.5"/><circle cx="14" cy="8" r="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M1 17c0-3 2.686-5.5 6-5.5s6 2.5 6 5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M14.5 12.5c1.933 0 3.5 1.343 3.5 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </div>
+      <span class="nav-label">Clients</span>
+    </div>
+    <div class="nav-item" onclick="navigate('add')" id="nav-add">
+      <div class="nav-dot"></div>
+      <div class="nav-icon">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5"/><path d="M10 7v6M7 10h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </div>
+      <span class="nav-label">Add</span>
+    </div>
+  </div>
+</div>
+
+<script>
+const screens = {};
+let currentScreen = 'login';
+
+function navigate(name, data) {
+  currentScreen = name;
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  const navEl = document.getElementById('nav-' + name);
+  if (navEl) navEl.classList.add('active');
+  document.getElementById('nav').style.display = ['login','agent-detail','client-detail','add-agent','add-client'].includes(name) ? 'none' : 'flex';
+  document.getElementById('screen').innerHTML = screens[name](data);
+}
+
+screens.login = () => `
+  <div class="login-wrap">
+    <div>
+      <div class="login-logo">RealTrack</div>
+      <div class="login-sub">Smart CRM for realtors</div>
+    </div>
+    <div class="input-group"><label>Email</label><input type="email" placeholder="you@email.com" value="demo@realtrack.app"/></div>
+    <div class="input-group"><label>Password</label><input type="password" placeholder="••••••••" value="demo1234"/></div>
+    <button class="btn btn-primary" onclick="navigate('dashboard')">Sign in</button>
+    <div class="divider">— or —</div>
+    <button class="btn btn-outline">Create account</button>
+    <div style="text-align:center;font-size:12px;color:var(--color-text-tertiary);margin-top:8px">Free tier: 5 agents + 5 clients</div>
+  </div>
+`;
+
+screens.dashboard = () => `
+  <div class="header"><h1>Good morning, Marcus</h1><p>Here's your activity snapshot</p></div>
+  <div class="content">
+    <div class="free-tier">
+      <span class="free-tier-label">Free tier — 3/5 agents, 4/5 clients used</span>
+      <button class="upgrade-btn">Upgrade</button>
+    </div>
+    <div class="metric-grid">
+      <div class="metric"><div class="metric-label">Active deals</div><div class="metric-value">4</div></div>
+      <div class="metric"><div class="metric-label">Visits this month</div><div class="metric-value warn">7</div></div>
+      <div class="metric"><div class="metric-label">Flagged clients</div><div class="metric-value danger">2</div></div>
+      <div class="metric"><div class="metric-label">Closed (YTD)</div><div class="metric-value good">3</div></div>
+    </div>
+    <div class="card">
+      <div class="section-label">Recent agent interactions</div>
+      <div class="list-item" onclick="navigate('agent-detail',{name:'Sandra Lee',brokerage:'Compass',rating:4,category:'Preferred',tags:['fast responder','fair offers'],notes:'Always comes prepared. Good communication on counter-offers.',deals:[{addr:'142 Maple St',offer:'$485,000',stage:'Closed',color:'stage-closed'},{addr:'88 Birch Ave',offer:'$512,000',stage:'Under contract',color:'stage-contract'}]})">
+        <div class="avatar av-blue">SL</div>
+        <div class="item-info"><div class="item-name">Sandra Lee</div><div class="item-sub">Compass · 2 deals</div></div>
+        <div class="item-right"><div class="stars">★★★★☆</div><div class="item-badge badge-green">Preferred</div></div>
+      </div>
+      <div class="list-item" onclick="navigate('agent-detail',{name:'Tom Briggs',brokerage:'Century 21',rating:2,category:'Difficult',tags:['slow replies','low-balls'],notes:'Tends to submit well below ask. Slow to respond to counters.',deals:[{addr:'310 Oak Dr',offer:'$398,000',stage:'Fallen through',color:'stage-fallen'},{addr:'21 Elm Ct',offer:'$430,000',stage:'Active',color:'stage-active'}]})">
+        <div class="avatar av-amber">TB</div>
+        <div class="item-info"><div class="item-name">Tom Briggs</div><div class="item-sub">Century 21 · 2 deals</div></div>
+        <div class="item-right"><div class="stars">★★☆☆☆</div><div class="item-badge badge-red">Difficult</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="section-label">Flagged clients</div>
+      <div class="list-item" onclick="navigate('client-detail',{name:'Robert Chen',visits:9,offers:2,offerAmts:['$310K','$295K'],flag:'High visits, low offers',retainer:true,notes:'Has visited 9 properties in 3 months. Both offers were significantly below market value.'})">
+        <div class="avatar av-red">RC</div>
+        <div class="item-info"><div class="item-name">Robert Chen</div><div class="item-sub">9 visits · 2 offers</div></div>
+        <div class="item-right"><div class="item-badge badge-red">Retainer req.</div></div>
+      </div>
+      <div class="list-item" onclick="navigate('client-detail',{name:'Amy Solis',visits:6,offers:3,offerAmts:['$520K','$505K','$498K'],flag:'Unrealistic offers',retainer:false,notes:'Offers consistently 15-20% below list price. Has rejected 2 counteroffers.'})">
+        <div class="avatar av-amber">AS</div>
+        <div class="item-info"><div class="item-name">Amy Solis</div><div class="item-sub">6 visits · 3 offers</div></div>
+        <div class="item-right"><div class="item-badge badge-amber">Flagged</div></div>
+      </div>
+    </div>
+  </div>
+`;
+
+screens.agents = () => `
+  <div class="header"><h1>Agents</h1><p>3 agents tracked</p></div>
+  <div class="content">
+    <div class="card">
+      <div class="list-item" onclick="navigate('agent-detail',{name:'Sandra Lee',brokerage:'Compass',rating:4,category:'Preferred',tags:['fast responder','fair offers'],notes:'Always comes prepared. Good communication on counter-offers.',deals:[{addr:'142 Maple St',offer:'$485,000',stage:'Closed',color:'stage-closed'},{addr:'88 Birch Ave',offer:'$512,000',stage:'Under contract',color:'stage-contract'}]})">
+        <div class="avatar av-blue">SL</div>
+        <div class="item-info"><div class="item-name">Sandra Lee</div><div class="item-sub">Compass</div></div>
+        <div class="item-right"><div class="stars">★★★★☆</div><div class="item-badge badge-green">Preferred</div></div>
+      </div>
+      <div class="list-item" onclick="navigate('agent-detail',{name:'Tom Briggs',brokerage:'Century 21',rating:2,category:'Difficult',tags:['slow replies','low-balls'],notes:'Tends to submit well below ask. Slow to respond to counters.',deals:[{addr:'310 Oak Dr',offer:'$398,000',stage:'Fallen through',color:'stage-fallen'},{addr:'21 Elm Ct',offer:'$430,000',stage:'Active',color:'stage-active'}]})">
+        <div class="avatar av-amber">TB</div>
+        <div class="item-info"><div class="item-name">Tom Briggs</div><div class="item-sub">Century 21</div></div>
+        <div class="item-right"><div class="stars">★★☆☆☆</div><div class="item-badge badge-red">Difficult</div></div>
+      </div>
+      <div class="list-item" onclick="navigate('agent-detail',{name:'Maria Vega',brokerage:'Keller Williams',rating:5,category:'Reliable',tags:['great communicator','quick close'],notes:'Extremely professional. Deals close on time consistently.',deals:[{addr:'77 Pine Ln',offer:'$610,000',stage:'Closed',color:'stage-closed'}]})">
+        <div class="avatar av-teal">MV</div>
+        <div class="item-info"><div class="item-name">Maria Vega</div><div class="item-sub">Keller Williams</div></div>
+        <div class="item-right"><div class="stars">★★★★★</div><div class="item-badge badge-blue">Reliable</div></div>
+      </div>
+    </div>
+    <button class="btn btn-outline" onclick="navigate('add-agent')">+ Add agent</button>
+  </div>
+`;
+
+screens['agent-detail'] = (d) => `
+  <div class="detail-hero">
+    <div class="detail-avatar av-blue" style="width:52px;height:52px;border-radius:50%;background:#E6F1FB;color:#0C447C;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:500">${d.name.split(' ').map(n=>n[0]).join('')}</div>
+    <div>
+      <div style="font-size:17px;font-weight:500;color:var(--color-text-primary)">${d.name}</div>
+      <div style="font-size:13px;color:var(--color-text-secondary)">${d.brokerage}</div>
+      <div class="stars" style="margin-top:4px">${'★'.repeat(d.rating)}${'☆'.repeat(5-d.rating)}</div>
+    </div>
+  </div>
+  <div class="content">
+    <span class="back-btn" onclick="navigate('agents')">← Back to agents</span>
+    <div class="card">
+      <div class="section-label">Category & tags</div>
+      <div class="item-badge badge-${d.category==='Preferred'?'green':d.category==='Difficult'?'red':'blue'}" style="margin-bottom:8px">${d.category}</div>
+      <div>${d.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+    </div>
+    <div class="card">
+      <div class="section-label">Notes</div>
+      <div style="font-size:13px;color:var(--color-text-primary);line-height:1.6">${d.notes}</div>
+    </div>
+    <div class="card">
+      <div class="section-label">Deal history</div>
+      ${d.deals.map(deal=>`
+        <div class="deal-row">
+          <div>
+            <div style="font-weight:500;color:var(--color-text-primary)">${deal.addr}</div>
+            <div class="deal-stage"><div class="stage-dot ${deal.color}"></div><span class="stage-label">${deal.stage}</span></div>
+          </div>
+          <div style="font-size:13px;font-weight:500;color:var(--color-text-primary)">${deal.offer}</div>
+        </div>
+      `).join('')}
+    </div>
+  </div>
+`;
+
+screens.clients = () => `
+  <div class="header"><h1>Clients</h1><p>4 clients tracked</p></div>
+  <div class="content">
+    <div class="card">
+      <div class="list-item" onclick="navigate('client-detail',{name:'Robert Chen',visits:9,offers:2,offerAmts:['$310K','$295K'],flag:'High visits, low offers',retainer:true,notes:'Has visited 9 properties in 3 months. Both offers were significantly below market value.'})">
+        <div class="avatar av-red">RC</div>
+        <div class="item-info"><div class="item-name">Robert Chen</div><div class="item-sub">9 visits · 2 offers</div></div>
+        <div class="item-right"><div class="item-badge badge-red">Retainer req.</div></div>
+      </div>
+      <div class="list-item" onclick="navigate('client-detail',{name:'Amy Solis',visits:6,offers:3,offerAmts:['$520K','$505K','$498K'],flag:'Unrealistic offers',retainer:false,notes:'Offers consistently 15-20% below list price. Has rejected 2 counteroffers.'})">
+        <div class="avatar av-amber">AS</div>
+        <div class="item-info"><div class="item-name">Amy Solis</div><div class="item-sub">6 visits · 3 offers</div></div>
+        <div class="item-right"><div class="item-badge badge-amber">Flagged</div></div>
+      </div>
+      <div class="list-item" onclick="navigate('client-detail',{name:'James Holbrook',visits:3,offers:2,offerAmts:['$445K','$460K'],flag:null,retainer:false,notes:'Reasonable client. Offers are near market value. Second offer accepted.'})">
+        <div class="avatar av-teal">JH</div>
+        <div class="item-info"><div class="item-name">James Holbrook</div><div class="item-sub">3 visits · 2 offers</div></div>
+        <div class="item-right"><div class="item-badge badge-green">Good standing</div></div>
+      </div>
+      <div class="list-item" onclick="navigate('client-detail',{name:'Priya Nair',visits:1,offers:1,offerAmts:['$389K'],flag:null,retainer:false,notes:'New client. First visit and offer. Too early to assess.'})">
+        <div class="avatar av-purple">PN</div>
+        <div class="item-info"><div class="item-name">Priya Nair</div><div class="item-sub">1 visit · 1 offer</div></div>
+        <div class="item-right"><div class="item-badge badge-gray">New</div></div>
+      </div>
+    </div>
+    <button class="btn btn-outline" onclick="navigate('add-client')">+ Add client</button>
+  </div>
+`;
+
+screens['client-detail'] = (d) => `
+  <div class="detail-hero">
+    <div class="detail-avatar" style="width:52px;height:52px;border-radius:50%;background:#E6F1FB;color:#0C447C;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:500">${d.name.split(' ').map(n=>n[0]).join('')}</div>
+    <div>
+      <div style="font-size:17px;font-weight:500;color:var(--color-text-primary)">${d.name}</div>
+      <div style="font-size:13px;color:var(--color-text-secondary)">${d.visits} visits · ${d.offers} offers</div>
+    </div>
+  </div>
+  <div class="content">
+    <span class="back-btn" onclick="navigate('clients')">← Back to clients</span>
+    ${d.retainer ? `<div class="retainer-badge"><span style="font-size:16px">&#9888;</span><span class="retainer-text">Retainer fee required — marked by agent</span></div>` : ''}
+    ${d.flag ? `<div class="flag-banner"><span class="flag-icon">&#9873;</span><div class="flag-text"><strong>Auto-flagged:</strong> ${d.flag}. Review before scheduling additional visits.</div></div>` : ''}
+    <div class="card">
+      <div class="section-label">Visit & offer activity</div>
+      <div style="margin-bottom:10px">
+        <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:4px">Visits (${d.visits})</div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${Math.min(d.visits/10*100,100)}%;background:${d.visits>6?'#A32D2D':d.visits>3?'#BA7517':'#185FA5'}"></div></div>
+      </div>
+      <div>
+        <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:4px">Offers submitted</div>
+        ${d.offerAmts.map((o,i)=>`<div class="deal-row"><span style="color:var(--color-text-secondary)">Offer ${i+1}</span><span style="font-weight:500">${o}</span></div>`).join('')}
+      </div>
+    </div>
+    <div class="card">
+      <div class="section-label">Notes</div>
+      <div style="font-size:13px;color:var(--color-text-primary);line-height:1.6">${d.notes}</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-outline" style="flex:1" onclick="alert('Log visit — connect to Supabase')">Log visit</button>
+      <button class="btn btn-outline" style="flex:1" onclick="alert('Log offer — connect to Supabase')">Log offer</button>
+    </div>
+    ${!d.retainer ? `<button class="btn btn-outline" style="border-color:#A32D2D;color:#A32D2D" onclick="alert('Retainer flag saved — connect to Supabase')">Mark retainer required</button>` : ''}
+  </div>
+`;
+
+screens.add = () => `
+  <div class="header"><h1>Add new</h1><p>Choose what to add</p></div>
+  <div class="content">
+    <div class="card" style="cursor:pointer" onclick="navigate('add-agent')">
+      <div style="display:flex;align-items:center;gap:14px">
+        <div style="width:42px;height:42px;border-radius:10px;background:#E6F1FB;display:flex;align-items:center;justify-content:center">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7" r="3.5" stroke="#185FA5" stroke-width="1.5"/><path d="M3 17c0-3.866 3.134-7 7-7s7 3.134 7 7" stroke="#185FA5" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+        <div><div style="font-weight:500;font-size:15px">Add agent</div><div style="font-size:13px;color:var(--color-text-secondary)">Track a new agent relationship</div></div>
+      </div>
+    </div>
+    <div class="card" style="cursor:pointer" onclick="navigate('add-client')">
+      <div style="display:flex;align-items:center;gap:14px">
+        <div style="width:42px;height:42px;border-radius:10px;background:#E1F5EE;display:flex;align-items:center;justify-content:center">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="7" cy="7" r="3" stroke="#0F6E56" stroke-width="1.5"/><circle cx="14" cy="8" r="2.5" stroke="#0F6E56" stroke-width="1.5"/><path d="M1 17c0-3 2.686-5.5 6-5.5s6 2.5 6 5.5" stroke="#0F6E56" stroke-width="1.5" stroke-linecap="round"/><path d="M14.5 12.5c1.933 0 3.5 1.343 3.5 3" stroke="#0F6E56" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+        <div><div style="font-weight:500;font-size:15px">Add client</div><div style="font-size:13px;color:var(--color-text-secondary)">Track a new buyer or seller</div></div>
+      </div>
+    </div>
+  </div>
+`;
+
+screens['add-agent'] = () => `
+  <div class="header"><h1>New agent</h1></div>
+  <div class="content">
+    <span class="back-btn" onclick="navigate('agents')">← Cancel</span>
+    <div class="card">
+      <div class="input-group"><label>Full name</label><input placeholder="e.g. Sandra Lee"/></div>
+      <div class="input-group"><label>Brokerage</label><input placeholder="e.g. Compass"/></div>
+      <div class="input-group"><label>Phone</label><input type="tel" placeholder="(555) 000-0000"/></div>
+      <div class="input-group"><label>Category</label>
+        <select>
+          <option>Preferred</option>
+          <option>Reliable</option>
+          <option>Neutral</option>
+          <option>Difficult</option>
+          <option>Avoid</option>
+        </select>
+      </div>
+      <div class="input-group"><label>Rating (1–5)</label>
+        <select>
+          <option>5 — Excellent</option>
+          <option>4 — Good</option>
+          <option>3 — Neutral</option>
+          <option>2 — Poor</option>
+          <option>1 — Avoid</option>
+        </select>
+      </div>
+      <div class="input-group"><label>Tags (comma-separated)</label><input placeholder="e.g. fast responder, fair offers"/></div>
+      <div class="input-group"><label>Notes</label><textarea placeholder="Anything notable about working with this agent…"></textarea></div>
+    </div>
+    <button class="btn btn-primary" onclick="alert('Save — connect to Supabase insert')">Save agent</button>
+  </div>
+`;
+
+screens['add-client'] = () => `
+  <div class="header"><h1>New client</h1></div>
+  <div class="content">
+    <span class="back-btn" onclick="navigate('clients')">← Cancel</span>
+    <div class="card">
+      <div class="input-group"><label>Full name</label><input placeholder="e.g. James Holbrook"/></div>
+      <div class="input-group"><label>Phone</label><input type="tel" placeholder="(555) 000-0000"/></div>
+      <div class="input-group"><label>Email</label><input type="email" placeholder="client@email.com"/></div>
+      <div class="input-group"><label>Budget range</label><input placeholder="e.g. $400K – $500K"/></div>
+      <div class="input-group"><label>Notes</label><textarea placeholder="Initial impressions, preferences, concerns…"></textarea></div>
+    </div>
+    <button class="btn btn-primary" onclick="alert('Save — connect to Supabase insert')">Save client</button>
+  </div>
+`;
+
+navigate('login');
+</script>
+</body>
+</html>
