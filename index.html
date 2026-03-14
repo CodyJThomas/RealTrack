@@ -193,7 +193,7 @@ function parseDollar(val) {
 }
 
 // ── Navigation ─────────────────────────────────────────────────
-var noNavScreens = ['login', 'agent-detail', 'client-detail', 'add-agent', 'add-client', 'add-visit', 'add-offer'];
+var noNavScreens = ['login', 'signup', 'agent-detail', 'client-detail', 'add-agent', 'add-client', 'add-visit', 'add-offer'];
 
 async function navigate(name, data) {
   document.getElementById('nav').style.display = noNavScreens.indexOf(name) > -1 ? 'none' : 'flex';
@@ -207,6 +207,7 @@ async function navigate(name, data) {
 async function renderScreen(name, data) {
   var scr = document.getElementById('screen');
   if (name === 'login')         { scr.innerHTML = screenLogin(); }
+  else if (name === 'signup')   { scr.innerHTML = screenSignup(); }
   else if (name === 'dashboard'){ scr.innerHTML = await screenDashboard(); }
   else if (name === 'agents')   { scr.innerHTML = await screenAgents(); }
   else if (name === 'agent-detail') { scr.innerHTML = await screenAgentDetail(data); }
@@ -227,8 +228,22 @@ function screenLogin() {
     + '<div class="input-group"><label>Email</label><input id="l-email" type="email" placeholder="you@email.com"/></div>'
     + '<div class="input-group"><label>Password</label><input id="l-pass" type="password" placeholder="••••••••"/></div>'
     + '<button class="btn btn-primary" onclick="doLogin()">Sign in</button>'
-    + '<button class="btn" onclick="doSignup()">Create account</button>'
+    + '<div style="text-align:center;font-size:12px;color:#aaa;margin:4px 0">— New to RealTrack? —</div>'
+    + '<button class="btn" style="border-color:#185FA5;color:#185FA5" onclick="navigate(\'signup\')">Create a new account</button>'
     + '<div style="text-align:center;font-size:12px;color:#aaa;margin-top:8px">Free tier: 5 agents + 5 clients</div>'
+    + '</div>';
+}
+
+function screenSignup() {
+  return '<div class="login-wrap">'
+    + '<div><div class="login-logo">RealTrack</div><div class="login-sub">Create your account</div></div>'
+    + '<div id="signup-error"></div>'
+    + '<div class="input-group"><label>Email</label><input id="s-email" type="email" placeholder="you@email.com"/></div>'
+    + '<div class="input-group"><label>Choose a password</label><input id="s-pass" type="password" placeholder="At least 6 characters"/></div>'
+    + '<div class="input-group"><label>Confirm password</label><input id="s-pass2" type="password" placeholder="Re-enter password"/></div>'
+    + '<button class="btn btn-primary" onclick="doSignup()">Create account</button>'
+    + '<div style="text-align:center;font-size:12px;color:#aaa;margin:4px 0">— Already have an account? —</div>'
+    + '<button class="btn" onclick="navigate(\'login\')">Back to sign in</button>'
     + '</div>';
 }
 
@@ -244,16 +259,19 @@ async function doLogin() {
 }
 
 async function doSignup() {
-  var email = document.getElementById('l-email').value.trim();
-  var pass  = document.getElementById('l-pass').value;
+  var email = document.getElementById('s-email').value.trim();
+  var pass  = document.getElementById('s-pass').value;
+  var pass2 = document.getElementById('s-pass2').value;
+  if (pass !== pass2) { document.getElementById('signup-error').innerHTML = '<div class="error-msg">Passwords do not match</div>'; return; }
+  if (pass.length < 6) { document.getElementById('signup-error').innerHTML = '<div class="error-msg">Password must be at least 6 characters</div>'; return; }
   var result = await sb.auth.signUp({ email: email, password: pass });
   if (result.error) {
-    document.getElementById('login-error').innerHTML = '<div class="error-msg">' + result.error.message + '</div>';
+    document.getElementById('signup-error').innerHTML = '<div class="error-msg">' + result.error.message + '</div>';
     return;
   }
   if (result.data.user) {
     await sb.from('profiles').upsert({ id: result.data.user.id, email: email, tier: 'free' });
-    toast('Account created! Check email to confirm.');
+    toast('Account created!');
     await afterAuth(result.data.user);
   }
 }
