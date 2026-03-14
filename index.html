@@ -109,6 +109,11 @@ body{background:#f5f5f3;display:flex;justify-content:center;align-items:flex-sta
       <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5"/><path d="M10 7v6M7 10h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
       <span class="nav-label">Add</span>
     </div>
+    <div class="nav-item" onclick="navigate('account')" id="nav-account">
+      <div class="nav-dot"></div>
+      <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7" r="3.5" stroke="currentColor" stroke-width="1.5"/><path d="M3 17c0-3.866 3.134-7 7-7s7 3.134 7 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="10" cy="7" r="3.5" stroke="currentColor" stroke-width="1.5"/></svg>
+      <span class="nav-label">Account</span>
+    </div>
   </div>
 </div>
 
@@ -338,6 +343,111 @@ async function screenDashboard() {
   html += '<button class="btn" onclick="doLogout()" style="margin-top:8px;color:#888;font-size:13px;border:none">Sign out</button>';
   html += '</div>';
   return html;
+}
+
+// ── Account ────────────────────────────────────────────────────
+async function screenAccount() {
+  var tier = (currentProfile && currentProfile.tier) || 'free';
+  var email = (currentUser && currentUser.email) || '—';
+  var name = (currentProfile && currentProfile.full_name) || '';
+
+  var html = '<div class="header"><h1>Account</h1></div>';
+  html += '<div class="content">';
+
+  // profile info
+  html += '<div class="card">'
+        + '<div class="section-label">Profile</div>'
+        + '<div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">'
+        + '<div class="avatar av-blue" style="width:48px;height:48px;font-size:16px">' + initials(name || email) + '</div>'
+        + '<div><div style="font-size:15px;font-weight:500">' + (name || 'Your account') + '</div>'
+        + '<div style="font-size:13px;color:#888">' + email + '</div></div>'
+        + '</div>'
+        + '<div class="input-group" style="margin-bottom:0">'
+        + '<label>Display name</label>'
+        + '<input id="acc-name" placeholder="Your name" value="' + (name || '') + '"/>'
+        + '</div>'
+        + '<button class="btn" style="margin-top:10px" onclick="saveName()">Save name</button>'
+        + '</div>';
+
+  // current plan
+  html += '<div class="card">'
+        + '<div class="section-label">Plan</div>'
+        + '<div style="display:flex;justify-content:space-between;align-items:center">'
+        + '<div>'
+        + '<div style="font-size:15px;font-weight:500">' + (tier === 'paid' ? 'Pro' : 'Free tier') + '</div>'
+        + '<div style="font-size:12px;color:#888;margin-top:2px">'
+        + (tier === 'paid' ? 'Unlimited agents, clients + reporting' : 'Up to 5 agents and 5 clients')
+        + '</div>'
+        + '</div>'
+        + (tier === 'free'
+          ? '<button class="upgrade-btn" onclick="navigate(\'upgrade\')">Upgrade</button>'
+          : '<span class="item-badge badge-green">Active</span>')
+        + '</div>'
+        + '</div>';
+
+  // change password
+  html += '<div class="card">'
+        + '<div class="section-label">Security</div>'
+        + '<div class="input-group"><label>New password</label><input id="acc-pw" type="password" placeholder="At least 6 characters"/></div>'
+        + '<div class="input-group" style="margin-bottom:0"><label>Confirm new password</label><input id="acc-pw2" type="password" placeholder="Re-enter password"/></div>'
+        + '<div id="pw-msg" style="margin-top:6px"></div>'
+        + '<button class="btn" style="margin-top:10px" onclick="changePassword()">Update password</button>'
+        + '</div>';
+
+  // support
+  html += '<div class="card">'
+        + '<div class="section-label">Support</div>'
+        + accountRow('Email support', 'support@realtrack.app', 'mailto:support@realtrack.app')
+        + accountRow('Send feedback', 'Tell us what you think', null, 'toast(\'Feedback form coming soon!\')')
+        + accountRow('Report a bug', 'Something not working?', null, 'toast(\'Bug report coming soon!\')')
+        + '</div>';
+
+  // about
+  html += '<div class="card">'
+        + '<div class="section-label">About</div>'
+        + accountRow('Version', '1.0.0-beta', null, null)
+        + accountRow('Terms of service', 'View terms', null, 'toast(\'Coming soon!\')')
+        + accountRow('Privacy policy', 'View policy', null, 'toast(\'Coming soon!\')')
+        + '</div>';
+
+  // sign out
+  html += '<button class="btn btn-danger" onclick="doLogout()">Sign out</button>';
+  html += '</div>';
+  return html;
+}
+
+function accountRow(label, sub, href, onclick) {
+  var action = href
+    ? 'window.open(\'' + href + '\')'
+    : (onclick || '');
+  var clickable = action ? ' style="cursor:pointer" onclick="' + action + '"' : '';
+  return '<div class="list-item"' + clickable + '>'
+       + '<div class="item-info"><div class="item-name">' + label + '</div><div class="item-sub">' + sub + '</div></div>'
+       + (action ? '<div style="color:#888;font-size:16px">›</div>' : '')
+       + '</div>';
+}
+
+async function saveName() {
+  var name = document.getElementById('acc-name').value.trim();
+  if (!name) { toast('Please enter a name'); return; }
+  var result = await sb.from('profiles').update({ full_name: name }).eq('id', currentUser.id);
+  if (result.error) { toast('Error: ' + result.error.message); return; }
+  currentProfile.full_name = name;
+  toast('Name saved');
+}
+
+async function changePassword() {
+  var pw  = document.getElementById('acc-pw').value;
+  var pw2 = document.getElementById('acc-pw2').value;
+  var msg = document.getElementById('pw-msg');
+  if (pw.length < 6) { msg.innerHTML = '<div class="error-msg">Password must be at least 6 characters</div>'; return; }
+  if (pw !== pw2)    { msg.innerHTML = '<div class="error-msg">Passwords do not match</div>'; return; }
+  var result = await sb.auth.updateUser({ password: pw });
+  if (result.error) { msg.innerHTML = '<div class="error-msg">' + result.error.message + '</div>'; return; }
+  msg.innerHTML = '';
+  document.getElementById('acc-pw').value = '';
+  document.getElementById('acc-pw2').value = '';
+  toast('Password updated');
 }
 
 // ── Agents ─────────────────────────────────────────────────────
