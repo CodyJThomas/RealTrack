@@ -304,3 +304,79 @@ BEGIN
   END IF;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ============================================================
+-- PROFILE AUTO-CREATE TRIGGER
+-- 
+-- Problem this solves:
+-- Supabase manages authentication in a separate schema (auth.users)
+-- that is internal and not directly accessible by the app.
+-- Our public.profiles table extends auth.users with app-specific
+-- data (tier, Stripe IDs, etc.) and is required by foreign key
+-- constraints on agents, clients, deals, and visits.
+--
+-- Without this trigger, a profiles row must be created manually
+-- at signup. If email confirmation is enabled, the user confirms
+-- via email link and returns to the app without the signup code
+-- running again — leaving them with no profiles row and causing
+-- foreign key violations on any insert.
+--
+-- This trigger fires automatically whenever a new row is inserted
+-- into auth.users (i.e. every time any user is created, regardless
+-- of confirmation method), guaranteeing a profiles row always exists
+-- before the user can interact with the app.
+-- ============================================================
+
+
+-- ------------------------------------------------------------
+-- FUNCTION: handle_new_user
+-- Called by the trigger below.
+-- Inserts a default free-tier profile for every new auth user.
+-- ON CONFLICT DO NOTHING ensures it is safe to run multiple
+-- times without creating duplicate rows (idempotent).
+-- SECURITY DEFINER means it runs with the privileges of the
+-- function owner (postgres), not the calling user — required
+-- because auth.users is in a restricted schema.
+-- ------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.profiles (id, email, tier)
+  VALUES (NEW.id, NEW.email, 'free')
+  ON CONFLICT (id) DO NOTHING;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+
+-- ------------------------------------------------------------
+-- TRIGGER: on_auth_user_created
+-- Fires AFTER every INSERT on auth.users, once per row.
+-- Calls handle_new_user() to create the matching profiles row.
+-- This covers all signup methods: email/password, OAuth, magic
+-- link, and any future auth providers added to the project.
+-- ------------------------------------------------------------
+CREATE OR REPLACE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+
+-- ============================================================
+-- BACKFILL: create profiles for existing users
+--
+-- If users already exist in auth.users without a corresponding
+-- profiles row (e.g. created before this trigger was added),
+-- this statement retroactively creates their profile rows.
+--
+-- Safe to run multiple times — ON CONFLICT DO NOTHING means
+-- existing profiles rows will not be overwritten or duplicated.
+--
+-- Replace 'your@email.com' with the email address of the
+-- affected user, or remove the WHERE clause entirely to
+-- backfill all users at once.
+-- ============================================================
+INSERT INTO public.profiles (id, email, tier)
+SELECT id, email, 'free'
+FROM auth.users
+WHERE email = 'your@email.com'  -- remove filter to backfill all users
+ON CONFLICT (id) DO NOTHING;
