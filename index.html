@@ -117,7 +117,7 @@ body{background:#f5f5f3;display:flex;justify-content:center;align-items:flex-sta
 <script>
 // ─── Supabase init ───────────────────────────────────────────
 const SUPA_URL  = 'https://bylkcfoqoehkgiiqscvl.supabase.co';
-const SUPA_ANON = 'sb_publishable_NkpWB9_qksTM-Kdqe7rJkg_OphNN-IL';
+const SUPA_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ5bGtjZm9xb2Voa2dpaXFzY3ZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0NTA5NDgsImV4cCI6MjA4OTAyNjk0OH0.nrCbebrNNg-bT1fes67ogCXHxhWfWkDa591db1MVsJo';
 const sb = supabase.createClient(SUPA_URL, SUPA_ANON);
 
 // ─── State ───────────────────────────────────────────────────
@@ -503,14 +503,133 @@ function screenAddClient() {
     <div id="add-error"></div>
     <div class="card">
       <div class="input-group"><label>Full name *</label><input id="c-name" placeholder="James Holbrook"/></div>
-      <div class="input-group"><label>Phone</label><input id="c-phone" type="tel" placeholder="(555) 000-0000"/></div>
+      <div class="input-group"><label>Phone</label><input id="c-phone" type="tel" inputmode="tel" placeholder="(555) 000-0000" oninput="fmtPhone(this)"/></div>
       <div class="input-group"><label>Email</label><input id="c-email" type="email" placeholder="client@email.com"/></div>
-      <div class="input-group"><label>Budget min</label><input id="c-bmin" type="number" placeholder="400000"/></div>
-      <div class="input-group"><label>Budget max</label><input id="c-bmax" type="number" placeholder="500000"/></div>
+      <div class="input-group"><label>Budget min</label><input id="c-bmin" type="text" inputmode="numeric" placeholder="$400,000" oninput="fmtDollar(this)"/></div>
+      <div class="input-group"><label>Budget max</label><input id="c-bmax" type="text" inputmode="numeric" placeholder="$500,000" oninput="fmtDollar(this)"/></div>
       <div class="input-group"><label>Notes</label><textarea id="c-notes" placeholder="Initial impressions…"></textarea></div>
     </div>
     <button class="btn btn-primary" onclick="saveClient()">Save client</button>
   </div>`;
+}
+
+function fmtPhone(el) {
+  let v = el.value.replace(/\D/g, '').slice(0, 10);
+  if (v.length >= 7) v = '(' + v.slice(0, 3) + ') ' + v.slice(3, 6) + '-' + v.slice(6);
+  else if (v.length >= 4) v = '(' + v.slice(0, 3) + ') ' + v.slice(3);
+  else if (v.length > 0) v = '(' + v;
+  el.value = v;
+}
+
+function fmtDollar(el) {
+  const raw = el.value.replace(/[^0-9]/g, '');
+  el.value = raw ? '$' + Number(raw).toLocaleString('en-US') : '';
+}
+
+function screenAddVisit(clientId) {
+  return `
+  <div class="header"><h1>Log visit</h1></div>
+  <div class="content">
+    <span class="back-btn" onclick="navigate('client-detail','${clientId}')">← Cancel</span>
+    <div id="add-error"></div>
+    <div class="card">
+      <div class="input-group"><label>Address *</label><input id="v-addr" placeholder="142 Maple St"/></div>
+      <div class="input-group"><label>Date</label><input id="v-date" type="date" value="${new Date().toISOString().split('T')[0]}"/></div>
+      <div class="input-group"><label>Outcome</label>
+        <select id="v-outcome"><option>Interested</option><option>Passed</option><option>Made offer</option><option>Undecided</option></select>
+      </div>
+      <div class="input-group"><label>Notes</label><textarea id="v-notes" placeholder="Observations from the visit…"></textarea></div>
+    </div>
+    <button class="btn btn-primary" onclick="saveVisit('${clientId}')">Save visit</button>
+  </div>`;
+}
+
+async function saveVisit(clientId) {
+  const addr = document.getElementById('v-addr').value.trim();
+  if (!addr) { document.getElementById('add-error').innerHTML='<div class="error-msg">Address is required</div>'; return; }
+  const {error} = await sb.from('visits').insert({
+    client_id: clientId,
+    user_id: currentUser.id,
+    address: addr,
+    visit_date: document.getElementById('v-date').value,
+    outcome: document.getElementById('v-outcome').value,
+    notes: document.getElementById('v-notes').value.trim()||null
+  });
+  if (error) { document.getElementById('add-error').innerHTML=`<div class="error-msg">${error.message}</div>`; return; }
+  await sb.rpc('evaluate_client_flag',{p_client_id:clientId});
+  toast('Visit logged');
+  navigate('client-detail', clientId);
+}
+
+function screenAddOffer(clientId) {
+  return `
+  <div class="header"><h1>Log offer</h1></div>
+  <div class="content">
+    <span class="back-btn" onclick="navigate('client-detail','${clientId}')">← Cancel</span>
+    <div id="add-error"></div>
+    <div class="card">
+      <div class="input-group"><label>Property address *</label><input id="o-addr" placeholder="88 Birch Ave"/></div>
+      <div class="input-group"><label>Amount *</label><input id="o-amt" type="number" placeholder="450000"/></div>
+      <div class="input-group"><label>Direction</label>
+        <select id="o-dir"><option value="sent">Sent (our offer)</option><option value="received">Received (their offer)</option></select>
+      </div>
+      <div class="input-group"><label>Status</label>
+        <select id="o-status"><option>Pending</option><option>Accepted</option><option>Rejected</option><option>Countered</option><option>Withdrawn</option></select>
+      </div>
+      <div class="input-group"><label>Date</label><input id="o-date" type="date" value="${new Date().toISOString().split('T')[0]}"/></div>
+      <div class="input-group"><label>Notes</label><textarea id="o-notes" placeholder="Context on this offer…"></textarea></div>
+    </div>
+    <button class="btn btn-primary" onclick="saveOffer('${clientId}')">Save offer</button>
+  </div>`;
+}
+
+async function saveOffer(clientId) {
+  const addr = document.getElementById('o-addr').value.trim();
+  const amt  = document.getElementById('o-amt').value;
+  if (!addr||!amt) { document.getElementById('add-error').innerHTML='<div class="error-msg">Address and amount are required</div>'; return; }
+  const {data:deal} = await sb.from('deals').insert({
+    user_id: currentUser.id,
+    client_id: clientId,
+    address: addr,
+    stage: 'Active',
+    our_offer: document.getElementById('o-dir').value==='sent'?amt:null,
+    their_offer: document.getElementById('o-dir').value==='received'?amt:null
+  }).select().single();
+  if (!deal) { document.getElementById('add-error').innerHTML='<div class="error-msg">Could not create deal record</div>'; return; }
+  const {error} = await sb.from('offers').insert({
+    deal_id: deal.id,
+    amount: amt,
+    direction: document.getElementById('o-dir').value,
+    status: document.getElementById('o-status').value,
+    offer_date: document.getElementById('o-date').value,
+    notes: document.getElementById('o-notes').value.trim()||null
+  });
+  if (error) { document.getElementById('add-error').innerHTML=`<div class="error-msg">${error.message}</div>`; return; }
+  await sb.rpc('evaluate_client_flag',{p_client_id:clientId});
+  toast('Offer logged');
+  navigate('client-detail', clientId);
+}
+
+// ─── Boot ─────────────────────────────────────────────────────
+(async () => {
+  const {data:{session}} = await sb.auth.getSession();
+  if (session?.user) {
+    currentUser = session.user;
+    const {data} = await sb.from('profiles').select('*').eq('id',session.user.id).single();
+    currentProfile = data;
+    navigate('dashboard');
+  } else {
+    navigate('login');
+  }
+})();
+</script>
+</body>
+</html>
++Number(raw).toLocaleString('en-US') : '';
+}
+
+function parseDollar(val) {
+  return val ? val.replace(/[^0-9]/g,'') || null : null;
 }
 
 async function saveClient() {
@@ -523,8 +642,8 @@ async function saveClient() {
     full_name: name,
     phone: document.getElementById('c-phone').value.trim()||null,
     email: document.getElementById('c-email').value.trim()||null,
-    budget_min: document.getElementById('c-bmin').value||null,
-    budget_max: document.getElementById('c-bmax').value||null,
+    budget_min: parseDollar(document.getElementById('c-bmin').value)||null,
+    budget_max: parseDollar(document.getElementById('c-bmax').value)||null,
     notes: document.getElementById('c-notes').value.trim()||null
   });
   if (error) { document.getElementById('add-error').innerHTML=`<div class="error-msg">${error.message}</div>`; return; }
