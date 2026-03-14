@@ -347,6 +347,11 @@ async function screenDashboard() {
 
 // ── Account ────────────────────────────────────────────────────
 async function screenAccount() {
+  if (!currentUser) { navigate('login'); return ''; }
+  if (!currentProfile) {
+    var r = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+    currentProfile = r.data || {};
+  }
   var tier = (currentProfile && currentProfile.tier) || 'free';
   var email = (currentUser && currentUser.email) || '—';
   var name = (currentProfile && currentProfile.full_name) || '';
