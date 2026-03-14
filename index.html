@@ -81,6 +81,19 @@ body{background:#f5f5f3;display:flex;justify-content:center;align-items:flex-sta
 .stage-closed{background:#3B6D11}
 .stage-fallen{background:#A32D2D}
 .stage-pending{background:#BA7517}
+.empty-state{text-align:center;padding:32px 16px;display:flex;flex-direction:column;align-items:center;gap:12px}
+.empty-icon{width:56px;height:56px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:4px}
+.empty-title{font-size:16px;font-weight:500;color:#111}
+.empty-sub{font-size:13px;color:#888;line-height:1.6;max-width:260px;text-align:center}
+.tooltip{font-size:11px;color:#888;background:#f5f5f3;border-radius:8px;padding:6px 10px;line-height:1.5;margin-top:4px}
+.checklist-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid rgba(0,0,0,0.07);font-size:13px}
+.checklist-item:last-child{border-bottom:none}
+.check-circle{width:20px;height:20px;border-radius:50%;border:1.5px solid rgba(0,0,0,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px}
+.check-circle.done{background:#3B6D11;border-color:#3B6D11;color:#fff}
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.bar-label{font-size:12px;color:#888;width:90px;flex-shrink:0}
+.bar-track{flex:1;height:8px;background:#f0f0ee;border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px}
 </style>
 </head>
 <body>
@@ -104,10 +117,10 @@ body{background:#f5f5f3;display:flex;justify-content:center;align-items:flex-sta
       <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><circle cx="7" cy="7" r="3" stroke="currentColor" stroke-width="1.5"/><circle cx="14" cy="8" r="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M1 17c0-3 2.686-5.5 6-5.5s6 2.5 6 5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M14.5 12.5c1.933 0 3.5 1.343 3.5 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
       <span class="nav-label">Clients</span>
     </div>
-    <div class="nav-item" onclick="navigate('add')" id="nav-add">
+    <div class="nav-item" onclick="navigate('reports')" id="nav-reports">
       <div class="nav-dot"></div>
-      <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5"/><path d="M10 7v6M7 10h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-      <span class="nav-label">Add</span>
+      <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><rect x="2" y="10" width="3" height="8" rx="1" fill="currentColor" opacity="0.7"/><rect x="8" y="6" width="3" height="12" rx="1" fill="currentColor" opacity="0.7"/><rect x="14" y="2" width="3" height="16" rx="1" fill="currentColor" opacity="0.7"/></svg>
+      <span class="nav-label">Reports</span>
     </div>
     <div class="nav-item" onclick="navigate('account')" id="nav-account">
       <div class="nav-dot"></div>
@@ -156,7 +169,6 @@ function stageColor(stage) {
 }
 function starStr(r) { return '★'.repeat(r) + '☆'.repeat(5-r); }
 function fmt(n) { return n ? '$' + Number(n).toLocaleString() : '—'; }
-
 function fmtPhone(el) {
   var v = el.value.replace(/\D/g,'').slice(0,10);
   if (v.length >= 7)      v = '(' + v.slice(0,3) + ') ' + v.slice(3,6) + '-' + v.slice(6);
@@ -188,7 +200,7 @@ async function navigate(name, data) {
   else if (name === 'agent-detail')  html = await screenAgentDetail(data);
   else if (name === 'clients')       html = await screenClients();
   else if (name === 'client-detail') html = await screenClientDetail(data);
-  else if (name === 'add')           html = screenAdd();
+  else if (name === 'reports')       html = await screenReports();
   else if (name === 'add-agent')     html = screenAddAgent();
   else if (name === 'add-client')    html = screenAddClient();
   else if (name === 'add-visit')     html = screenAddVisit(data);
@@ -237,8 +249,8 @@ async function doSignup() {
   var email = document.getElementById('s-email').value.trim();
   var pass  = document.getElementById('s-pass').value;
   var pass2 = document.getElementById('s-pass2').value;
-  if (pass !== pass2)    { document.getElementById('signup-error').innerHTML = '<div class="error-msg">Passwords do not match</div>'; return; }
-  if (pass.length < 6)   { document.getElementById('signup-error').innerHTML = '<div class="error-msg">Password must be at least 6 characters</div>'; return; }
+  if (pass !== pass2)  { document.getElementById('signup-error').innerHTML = '<div class="error-msg">Passwords do not match</div>'; return; }
+  if (pass.length < 6) { document.getElementById('signup-error').innerHTML = '<div class="error-msg">Password must be at least 6 characters</div>'; return; }
   var r = await sb.auth.signUp({email:email, password:pass});
   if (r.error) { document.getElementById('signup-error').innerHTML = '<div class="error-msg">' + r.error.message + '</div>'; return; }
   if (r.data.user) {
@@ -250,15 +262,14 @@ async function doSignup() {
 
 async function afterAuth(user) {
   currentUser = user;
-  var r = await sb.from('profiles').select('*').eq('id', user.id).single();
+  var r = await sb.from('profiles').select('*').eq('id',user.id).single();
   currentProfile = r.data || {tier:'free'};
   navigate('dashboard');
 }
 
 async function doLogout() {
   await sb.auth.signOut();
-  currentUser = null;
-  currentProfile = null;
+  currentUser = null; currentProfile = null;
   document.getElementById('nav').style.display = 'none';
   navigate('login');
 }
@@ -276,25 +287,49 @@ async function screenDashboard() {
   var clients = res[1].data || [];
   var deals   = res[2].data || [];
   var visits  = res[3].data || [];
-  var now = new Date();
+  var now         = new Date();
   var thisMonth   = visits.filter(function(v) { return new Date(v.created_at).getMonth() === now.getMonth(); }).length;
   var activeDeals = deals.filter(function(d) { return d.stage === 'Active' || d.stage === 'Under Contract'; }).length;
   var closedDeals = deals.filter(function(d) { return d.stage === 'Closed'; }).length;
   var flagged     = clients.filter(function(c) { return c.flag_reason; });
   var tier        = (currentProfile && currentProfile.tier) || 'free';
+  var hasAgents   = agents.length > 0;
+  var hasClients  = clients.length > 0;
+  var hasDeals    = deals.length > 0;
+
   var html = '<div class="header"><h1>Dashboard</h1><p>' + currentUser.email + '</p></div><div class="content">';
+
+  // free tier bar
   if (tier === 'free') {
-    html += '<div class="free-tier"><span class="free-tier-label">Free — ' + agents.length + '/5 agents, ' + clients.length + '/5 clients</span>'
+    html += '<div class="free-tier">'
+          + '<span class="free-tier-label" title="Upgrade to Pro for unlimited records">Free — ' + agents.length + '/5 agents, ' + clients.length + '/5 clients</span>'
           + '<button class="upgrade-btn" onclick="navigate(\'upgrade\')">Upgrade</button></div>';
   }
+
+  // onboarding checklist — show until all three steps done
+  if (!hasAgents || !hasClients || !hasDeals) {
+    html += '<div class="card">'
+          + '<div class="section-label">Getting started</div>'
+          + '<div style="font-size:12px;color:#888;margin-bottom:10px">Complete these steps to get the most out of RealTrack.</div>'
+          + checklistItem('Add your first agent', 'Track agents you work with on deals', hasAgents, 'navigate(\'add-agent\')')
+          + checklistItem('Add your first client', 'Log a buyer or seller you are working with', hasClients, 'navigate(\'add-client\')')
+          + checklistItem('Log a deal or offer', 'Record an active deal to track its progress', hasDeals, 'navigate(\'add-offer\',null)')
+          + '</div>';
+  }
+
+  // metrics
   html += '<div class="metric-grid">'
         + '<div class="metric"><div class="metric-label">Active deals</div><div class="metric-value">' + activeDeals + '</div></div>'
         + '<div class="metric"><div class="metric-label">Visits this month</div><div class="metric-value warn">' + thisMonth + '</div></div>'
         + '<div class="metric"><div class="metric-label">Flagged clients</div><div class="metric-value danger">' + flagged.length + '</div></div>'
         + '<div class="metric"><div class="metric-label">Closed (all time)</div><div class="metric-value good">' + closedDeals + '</div></div>'
         + '</div>';
+
+  // flagged clients
   if (flagged.length > 0) {
-    html += '<div class="card"><div class="section-label">Flagged clients</div>';
+    html += '<div class="card"><div class="section-label">Flagged clients</div>'
+          + '<div class="tooltip">Clients are auto-flagged when visit count is high relative to offers made.</div>'
+          + '<div style="margin-top:8px">';
     flagged.slice(0,3).forEach(function(c) {
       html += '<div class="list-item" onclick="navigate(\'client-detail\',\'' + c.id + '\')">'
             + '<div class="avatar ' + avColor(c.full_name) + '">' + initials(c.full_name) + '</div>'
@@ -302,10 +337,19 @@ async function screenDashboard() {
             + '<div class="item-right">' + (c.retainer_required ? '<span class="item-badge badge-red">Retainer req.</span>' : '<span class="item-badge badge-amber">Flagged</span>') + '</div>'
             + '</div>';
     });
-    html += '</div>';
+    html += '</div></div>';
   }
+
   html += '</div>';
   return html;
+}
+
+function checklistItem(title, sub, done, action) {
+  return '<div class="checklist-item"' + ((!done && action) ? ' onclick="' + action + '" style="cursor:pointer"' : '') + '>'
+       + '<div class="check-circle' + (done ? ' done' : '') + '">' + (done ? '&#10003;' : '') + '</div>'
+       + '<div class="item-info"><div class="item-name" style="font-size:13px">' + title + '</div><div class="item-sub">' + sub + '</div></div>'
+       + (!done ? '<div style="color:#185FA5;font-size:16px">›</div>' : '')
+       + '</div>';
 }
 
 // ── Agents ─────────────────────────────────────────────────────
@@ -313,7 +357,15 @@ async function screenAgents() {
   var r = await sb.from('agents').select('*').eq('user_id',currentUser.id).order('full_name');
   if (r.error) return '<div class="content"><div class="error-msg">' + r.error.message + '</div></div>';
   var agents = r.data || [];
-  if (!agents.length) return '<div class="header"><h1>Agents</h1><p>No agents yet</p></div><div class="content"><button class="btn btn-primary" onclick="navigate(\'add-agent\')">+ Add your first agent</button></div>';
+  if (!agents.length) {
+    return '<div class="header"><h1>Agents</h1></div>'
+         + '<div class="content"><div class="empty-state">'
+         + '<div class="empty-icon" style="background:#E6F1FB">&#128100;</div>'
+         + '<div class="empty-title">No agents yet</div>'
+         + '<div class="empty-sub">Add the agents you work with on deals. Rate them, add tags, and track every interaction over time so you know what to expect.</div>'
+         + '<button class="btn btn-primary" style="width:auto;padding:10px 24px" onclick="navigate(\'add-agent\')">+ Add your first agent</button>'
+         + '</div></div>';
+  }
   var html = '<div class="header"><h1>Agents</h1><p>' + agents.length + ' tracked</p></div><div class="content"><div class="card">';
   agents.forEach(function(a) {
     html += '<div class="list-item" onclick="navigate(\'agent-detail\',\'' + a.id + '\')">'
@@ -322,7 +374,9 @@ async function screenAgents() {
           + '<div class="item-right"><div class="stars">' + starStr(a.rating) + '</div>' + categoryBadge(a.category) + '</div>'
           + '</div>';
   });
-  html += '</div><button class="btn" onclick="navigate(\'add-agent\')">+ Add agent</button></div>';
+  html += '</div>'
+        + '<div class="tooltip">Tap an agent to view their deal history and notes. Use categories and ratings to set expectations before negotiating.</div>'
+        + '<button class="btn" onclick="navigate(\'add-agent\')">+ Add agent</button></div>';
   return html;
 }
 
@@ -332,9 +386,7 @@ async function screenAgentDetail(agentId) {
     sb.from('agent_tags').select('tag').eq('agent_id',agentId),
     sb.from('deals').select('*').eq('agent_id',agentId).order('created_at',{ascending:false})
   ]);
-  var agent = res[0].data;
-  var tags  = res[1].data || [];
-  var deals = res[2].data || [];
+  var agent = res[0].data; var tags = res[1].data || []; var deals = res[2].data || [];
   if (!agent) return '<div class="content"><div class="error-msg">Agent not found</div></div>';
   var html = '<div class="detail-hero">'
            + '<div class="avatar ' + avColor(agent.full_name) + '" style="width:52px;height:52px;font-size:16px">' + initials(agent.full_name) + '</div>'
@@ -343,7 +395,8 @@ async function screenAgentDetail(agentId) {
            + '<div class="stars" style="margin-top:4px">' + starStr(agent.rating) + '</div></div></div>'
            + '<div class="content"><span class="back-btn" onclick="navigate(\'agents\')">← Back</span>'
            + '<div class="card"><div class="section-label">Category &amp; tags</div>' + categoryBadge(agent.category)
-           + '<div style="margin-top:8px">' + (tags.length ? tags.map(function(t){return '<span class="tag">'+t.tag+'</span>';}).join('') : '<span style="font-size:12px;color:#aaa">No tags</span>') + '</div></div>';
+           + '<div class="tooltip" style="margin-top:8px">Categories help you quickly assess an agent before entering a deal. Tags capture specific behavioral patterns.</div>'
+           + '<div style="margin-top:8px">' + (tags.length ? tags.map(function(t){return '<span class="tag">'+t.tag+'</span>';}).join('') : '<span style="font-size:12px;color:#aaa">No tags added</span>') + '</div></div>';
   if (agent.notes) html += '<div class="card"><div class="section-label">Notes</div><div style="font-size:13px;line-height:1.6">' + agent.notes + '</div></div>';
   html += '<div class="card"><div class="section-label">Deal history (' + deals.length + ')</div>';
   if (deals.length) {
@@ -352,7 +405,12 @@ async function screenAgentDetail(agentId) {
             + '<div style="margin-top:4px"><span class="stage-dot ' + stageColor(d.stage) + '"></span><span style="font-size:12px;color:#888">' + d.stage + '</span></div></div>'
             + '<div style="font-weight:500">' + fmt(d.our_offer||d.their_offer) + '</div></div>';
     });
-  } else { html += '<div style="font-size:13px;color:#aaa">No deals yet</div>'; }
+  } else {
+    html += '<div class="empty-state" style="padding:16px 0">'
+          + '<div style="font-size:13px;color:#aaa">No deals logged with this agent yet.</div>'
+          + '<div style="font-size:12px;color:#aaa;margin-top:4px">Log an offer on a client to associate a deal.</div>'
+          + '</div>';
+  }
   html += '</div></div>';
   return html;
 }
@@ -362,7 +420,15 @@ async function screenClients() {
   var r = await sb.from('clients').select('*').eq('user_id',currentUser.id).order('full_name');
   if (r.error) return '<div class="content"><div class="error-msg">' + r.error.message + '</div></div>';
   var clients = r.data || [];
-  if (!clients.length) return '<div class="header"><h1>Clients</h1><p>No clients yet</p></div><div class="content"><button class="btn btn-primary" onclick="navigate(\'add-client\')">+ Add your first client</button></div>';
+  if (!clients.length) {
+    return '<div class="header"><h1>Clients</h1></div>'
+         + '<div class="content"><div class="empty-state">'
+         + '<div class="empty-icon" style="background:#E1F5EE">&#128101;</div>'
+         + '<div class="empty-title">No clients yet</div>'
+         + '<div class="empty-sub">Add buyers and sellers you are working with. RealTrack will automatically flag clients with high visit counts or unrealistic offer patterns.</div>'
+         + '<button class="btn btn-primary" style="width:auto;padding:10px 24px" onclick="navigate(\'add-client\')">+ Add your first client</button>'
+         + '</div></div>';
+  }
   var html = '<div class="header"><h1>Clients</h1><p>' + clients.length + ' tracked</p></div><div class="content"><div class="card">';
   clients.forEach(function(c) {
     var badge = c.retainer_required ? '<span class="item-badge badge-red">Retainer req.</span>'
@@ -373,7 +439,9 @@ async function screenClients() {
           + '<div class="item-info"><div class="item-name">' + c.full_name + '</div><div class="item-sub">' + (c.phone||c.email||'—') + '</div></div>'
           + '<div class="item-right">' + badge + '</div></div>';
   });
-  html += '</div><button class="btn" onclick="navigate(\'add-client\')">+ Add client</button></div>';
+  html += '</div>'
+        + '<div class="tooltip">Clients are automatically flagged when they accumulate 5+ visits with fewer than 2 offers, or have a high visit-to-offer ratio.</div>'
+        + '<button class="btn" onclick="navigate(\'add-client\')">+ Add client</button></div>';
   return html;
 }
 
@@ -383,9 +451,7 @@ async function screenClientDetail(clientId) {
     sb.from('visits').select('*').eq('client_id',clientId).order('visit_date',{ascending:false}),
     sb.from('deals').select('*,offers(*)').eq('client_id',clientId).order('created_at',{ascending:false})
   ]);
-  var client = res[0].data;
-  var visits = res[1].data || [];
-  var deals  = res[2].data || [];
+  var client = res[0].data; var visits = res[1].data || []; var deals = res[2].data || [];
   if (!client) return '<div class="content"><div class="error-msg">Client not found</div></div>';
   var allOffers = [];
   deals.forEach(function(d) { if (d.offers) allOffers = allOffers.concat(d.offers); });
@@ -397,16 +463,19 @@ async function screenClientDetail(clientId) {
            + '<div><div style="font-size:17px;font-weight:500">' + client.full_name + '</div>'
            + '<div style="font-size:13px;color:#888">' + visitCount + ' visits · ' + allOffers.length + ' offers</div></div></div>'
            + '<div class="content"><span class="back-btn" onclick="navigate(\'clients\')">← Back</span>';
-  if (client.retainer_required) html += '<div class="retainer-badge">&#9888; Retainer fee required</div>';
-  if (client.flag_reason)       html += '<div class="flag-banner">&#9873; <strong>Flagged:</strong> ' + client.flag_reason + '</div>';
-  html += '<div class="card"><div class="section-label">Visit history (' + visitCount + ')</div>'
+  if (client.retainer_required) html += '<div class="retainer-badge">&#9888; Retainer fee required — this client has been flagged for upfront commitment before further showings.</div>';
+  if (client.flag_reason)       html += '<div class="flag-banner">&#9873; <strong>Auto-flagged:</strong> ' + client.flag_reason + '. Review visit and offer history before scheduling more showings.</div>';
+  html += '<div class="card"><div class="section-label">Visit activity</div>'
         + '<div class="progress-bar"><div class="progress-fill" style="width:' + visitPct + '%;background:' + visitColor + '"></div></div>'
+        + '<div class="tooltip">Bar fills as visits increase. Turns amber at 4+ visits, red at 7+.</div>'
         + '<div style="margin-top:10px">';
   if (visits.length) {
     visits.slice(0,5).forEach(function(v) {
       html += '<div class="deal-row"><span style="color:#888">' + v.visit_date + '</span><span style="font-weight:500;font-size:12px">' + v.address + '</span></div>';
     });
-  } else { html += '<div style="font-size:13px;color:#aaa">No visits logged</div>'; }
+  } else {
+    html += '<div style="font-size:13px;color:#aaa;padding:8px 0">No visits logged yet. Tap Log visit below.</div>';
+  }
   html += '</div></div><div class="card"><div class="section-label">Offers (' + allOffers.length + ')</div>';
   if (allOffers.length) {
     allOffers.slice(0,5).forEach(function(o) {
@@ -414,7 +483,9 @@ async function screenClientDetail(clientId) {
       html += '<div class="deal-row"><span style="color:#888">' + o.offer_date + ' · ' + o.direction + '</span>'
             + '<span style="font-weight:500">' + fmt(o.amount) + ' <span class="item-badge badge-' + sc + '">' + o.status + '</span></span></div>';
     });
-  } else { html += '<div style="font-size:13px;color:#aaa">No offers logged</div>'; }
+  } else {
+    html += '<div style="font-size:13px;color:#aaa;padding:8px 0">No offers logged yet. Tap Log offer below.</div>';
+  }
   html += '</div>';
   if (client.notes) html += '<div class="card"><div class="section-label">Notes</div><div style="font-size:13px;line-height:1.6">' + client.notes + '</div></div>';
   html += '<div style="display:flex;gap:8px">'
@@ -433,21 +504,109 @@ async function setRetainer(clientId) {
   navigate('client-detail', clientId);
 }
 
-// ── Add screens ────────────────────────────────────────────────
-function screenAdd() {
-  return '<div class="header"><h1>Add new</h1></div><div class="content">'
-       + '<div class="card" style="cursor:pointer" onclick="navigate(\'add-agent\')">'
-       + '<div style="display:flex;align-items:center;gap:14px">'
-       + '<div style="width:42px;height:42px;border-radius:10px;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-size:20px">&#128100;</div>'
-       + '<div><div style="font-weight:500;font-size:15px">Add agent</div><div style="font-size:13px;color:#888">Track a new agent relationship</div></div>'
-       + '</div></div>'
-       + '<div class="card" style="cursor:pointer" onclick="navigate(\'add-client\')">'
-       + '<div style="display:flex;align-items:center;gap:14px">'
-       + '<div style="width:42px;height:42px;border-radius:10px;background:#E1F5EE;display:flex;align-items:center;justify-content:center;font-size:20px">&#128101;</div>'
-       + '<div><div style="font-weight:500;font-size:15px">Add client</div><div style="font-size:13px;color:#888">Track a new buyer or seller</div></div>'
-       + '</div></div></div>';
+// ── Reports ────────────────────────────────────────────────────
+async function screenReports() {
+  var uid = currentUser.id;
+  var tier = (currentProfile && currentProfile.tier) || 'free';
+  var res = await Promise.all([
+    sb.from('deals').select('stage').eq('user_id',uid),
+    sb.from('clients').select('id,flag_reason,retainer_required').eq('user_id',uid),
+    sb.from('visits').select('visit_date').eq('user_id',uid),
+    sb.from('offers').select('amount,direction,status,deal_id'),
+  ]);
+  var deals   = res[0].data || [];
+  var clients = res[1].data || [];
+  var visits  = res[2].data || [];
+  var offers  = res[3].data || [];
+
+  // deal stage breakdown
+  var stages = {'Active':0,'Under Contract':0,'Closed':0,'Fallen Through':0,'Pending':0};
+  deals.forEach(function(d) { if (stages[d.stage] !== undefined) stages[d.stage]++; });
+  var totalDeals = deals.length || 1;
+
+  // client health
+  var goodClients     = clients.filter(function(c) { return !c.flag_reason && !c.retainer_required; }).length;
+  var flaggedClients  = clients.filter(function(c) { return c.flag_reason && !c.retainer_required; }).length;
+  var retainerClients = clients.filter(function(c) { return c.retainer_required; }).length;
+
+  // visits by month (last 4 months)
+  var monthCounts = {};
+  var now = new Date();
+  for (var i = 3; i >= 0; i--) {
+    var d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    var key = d.toLocaleString('en-US',{month:'short'});
+    monthCounts[key] = 0;
+  }
+  visits.forEach(function(v) {
+    var vd = new Date(v.visit_date);
+    var key = vd.toLocaleString('en-US',{month:'short'});
+    if (monthCounts[key] !== undefined) monthCounts[key]++;
+  });
+  var maxVisits = Math.max.apply(null, Object.values(monthCounts)) || 1;
+
+  var html = '<div class="header"><h1>Reports</h1><p>Activity summary</p></div><div class="content">';
+
+  // deal stages
+  html += '<div class="card"><div class="section-label">Deal pipeline</div>';
+  var stageColors = {'Active':'#185FA5','Under Contract':'#3B6D11','Closed':'#3B6D11','Fallen Through':'#A32D2D','Pending':'#BA7517'};
+  Object.keys(stages).forEach(function(s) {
+    var pct = Math.round(stages[s] / totalDeals * 100);
+    html += '<div class="bar-row">'
+          + '<div class="bar-label">' + s + '</div>'
+          + '<div class="bar-track"><div class="bar-fill" style="width:' + pct + '%;background:' + (stageColors[s]||'#888') + '"></div></div>'
+          + '<div style="font-size:12px;color:#888;width:20px;text-align:right">' + stages[s] + '</div>'
+          + '</div>';
+  });
+  html += '</div>';
+
+  // client health
+  html += '<div class="card"><div class="section-label">Client health</div>';
+  var totalClients = clients.length || 1;
+  var healthItems = [
+    {label:'Good standing', count:goodClients,     color:'#3B6D11'},
+    {label:'Flagged',       count:flaggedClients,  color:'#BA7517'},
+    {label:'Retainer req.', count:retainerClients, color:'#A32D2D'}
+  ];
+  healthItems.forEach(function(item) {
+    var pct = Math.round(item.count / totalClients * 100);
+    html += '<div class="bar-row">'
+          + '<div class="bar-label">' + item.label + '</div>'
+          + '<div class="bar-track"><div class="bar-fill" style="width:' + pct + '%;background:' + item.color + '"></div></div>'
+          + '<div style="font-size:12px;color:#888;width:20px;text-align:right">' + item.count + '</div>'
+          + '</div>';
+  });
+  html += '</div>';
+
+  // visits by month
+  html += '<div class="card"><div class="section-label">Visits — last 4 months</div>';
+  Object.keys(monthCounts).forEach(function(month) {
+    var pct = Math.round(monthCounts[month] / maxVisits * 100);
+    html += '<div class="bar-row">'
+          + '<div class="bar-label">' + month + '</div>'
+          + '<div class="bar-track"><div class="bar-fill" style="width:' + pct + '%;background:#185FA5"></div></div>'
+          + '<div style="font-size:12px;color:#888;width:20px;text-align:right">' + monthCounts[month] + '</div>'
+          + '</div>';
+  });
+  html += '</div>';
+
+  // offer outcomes
+  var sent     = offers.filter(function(o){ return o.direction==='sent'; });
+  var accepted = sent.filter(function(o){ return o.status==='Accepted'; }).length;
+  var rejected = sent.filter(function(o){ return o.status==='Rejected'; }).length;
+  var rate     = sent.length ? Math.round(accepted/sent.length*100) : 0;
+  html += '<div class="card"><div class="section-label">Offer outcomes</div>'
+        + '<div class="metric-grid">'
+        + '<div class="metric"><div class="metric-label">Offers sent</div><div class="metric-value">' + sent.length + '</div></div>'
+        + '<div class="metric"><div class="metric-label">Acceptance rate</div><div class="metric-value good">' + rate + '%</div></div>'
+        + '<div class="metric"><div class="metric-label">Accepted</div><div class="metric-value good">' + accepted + '</div></div>'
+        + '<div class="metric"><div class="metric-label">Rejected</div><div class="metric-value danger">' + rejected + '</div></div>'
+        + '</div></div>';
+
+  html += '</div>';
+  return html;
 }
 
+// ── Add screens ────────────────────────────────────────────────
 function screenAddAgent() {
   return '<div class="header"><h1>New agent</h1></div><div class="content">'
        + '<span class="back-btn" onclick="navigate(\'agents\')">← Cancel</span>'
@@ -457,17 +616,19 @@ function screenAddAgent() {
        + '<div class="input-group"><label>Brokerage</label><input id="a-brokerage" placeholder="Compass"/></div>'
        + '<div class="input-group"><label>Phone</label><input id="a-phone" type="tel" inputmode="tel" placeholder="(555) 000-0000" oninput="fmtPhone(this)"/></div>'
        + '<div class="input-group"><label>Email</label><input id="a-email" type="email" placeholder="agent@email.com"/></div>'
-       + '<div class="input-group"><label>Category</label><select id="a-cat"><option>Preferred</option><option>Reliable</option><option selected>Neutral</option><option>Difficult</option><option>Avoid</option></select></div>'
+       + '<div class="input-group"><label>Category</label><select id="a-cat"><option>Preferred</option><option>Reliable</option><option selected>Neutral</option><option>Difficult</option><option>Avoid</option></select>'
+       + '<div class="tooltip">Preferred = go-to agents. Difficult = proceed with caution. Avoid = do not engage.</div></div>'
        + '<div class="input-group"><label>Rating</label><select id="a-rating"><option value="5">5 — Excellent</option><option value="4">4 — Good</option><option value="3" selected>3 — Neutral</option><option value="2">2 — Poor</option><option value="1">1 — Avoid</option></select></div>'
-       + '<div class="input-group"><label>Tags (comma-separated)</label><input id="a-tags" placeholder="fast responder, fair offers"/></div>'
-       + '<div class="input-group"><label>Notes</label><textarea id="a-notes" placeholder="Anything notable..."></textarea></div>'
+       + '<div class="input-group"><label>Tags (comma-separated)</label><input id="a-tags" placeholder="fast responder, fair offers"/>'
+       + '<div class="tooltip">Tags capture specific patterns — e.g. low-balls, slow replies, quick close. Use them to search and filter later.</div></div>'
+       + '<div class="input-group"><label>Notes</label><textarea id="a-notes" placeholder="Anything notable about working with this agent..."></textarea></div>'
        + '</div><button class="btn btn-primary" onclick="saveAgent()">Save agent</button></div>';
 }
 
 async function saveAgent() {
   var name = document.getElementById('a-name').value.trim();
   if (!name) { document.getElementById('add-error').innerHTML = '<div class="error-msg">Name is required</div>'; return; }
-  var allowed = await sb.rpc('check_tier_limit',{p_user_id:currentUser.id, p_table:'agents'});
+  var allowed = await sb.rpc('check_tier_limit',{p_user_id:currentUser.id,p_table:'agents'});
   if (!allowed.data) { document.getElementById('add-error').innerHTML = '<div class="error-msg">Free tier limit reached (5 agents). Upgrade to add more.</div>'; return; }
   var r = await sb.from('agents').insert({
     user_id:currentUser.id, full_name:name,
@@ -495,14 +656,14 @@ function screenAddClient() {
        + '<div class="input-group"><label>Email</label><input id="c-email" type="email" placeholder="client@email.com"/></div>'
        + '<div class="input-group"><label>Budget min</label><input id="c-bmin" type="text" inputmode="numeric" placeholder="$400,000" oninput="fmtDollar(this)"/></div>'
        + '<div class="input-group"><label>Budget max</label><input id="c-bmax" type="text" inputmode="numeric" placeholder="$500,000" oninput="fmtDollar(this)"/></div>'
-       + '<div class="input-group"><label>Notes</label><textarea id="c-notes" placeholder="Initial impressions..."></textarea></div>'
+       + '<div class="input-group"><label>Notes</label><textarea id="c-notes" placeholder="Initial impressions, preferences, concerns..."></textarea></div>'
        + '</div><button class="btn btn-primary" onclick="saveClient()">Save client</button></div>';
 }
 
 async function saveClient() {
   var name = document.getElementById('c-name').value.trim();
   if (!name) { document.getElementById('add-error').innerHTML = '<div class="error-msg">Name is required</div>'; return; }
-  var allowed = await sb.rpc('check_tier_limit',{p_user_id:currentUser.id, p_table:'clients'});
+  var allowed = await sb.rpc('check_tier_limit',{p_user_id:currentUser.id,p_table:'clients'});
   if (!allowed.data) { document.getElementById('add-error').innerHTML = '<div class="error-msg">Free tier limit reached (5 clients). Upgrade to add more.</div>'; return; }
   var r = await sb.from('clients').insert({
     user_id:currentUser.id, full_name:name,
@@ -548,7 +709,7 @@ async function saveVisit(clientId) {
 function screenAddOffer(clientId) {
   var today = new Date().toISOString().split('T')[0];
   return '<div class="header"><h1>Log offer</h1></div><div class="content">'
-       + '<span class="back-btn" onclick="navigate(\'client-detail\',\'' + clientId + '\')">← Cancel</span>'
+       + '<span class="back-btn" onclick="' + (clientId ? 'navigate(\'client-detail\',\'' + clientId + '\')' : 'navigate(\'clients\')') + '">← Cancel</span>'
        + '<div id="add-error"></div>'
        + '<div class="card">'
        + '<div class="input-group"><label>Property address *</label><input id="o-addr" placeholder="88 Birch Ave"/></div>'
@@ -557,7 +718,7 @@ function screenAddOffer(clientId) {
        + '<div class="input-group"><label>Status</label><select id="o-status"><option>Pending</option><option>Accepted</option><option>Rejected</option><option>Countered</option><option>Withdrawn</option></select></div>'
        + '<div class="input-group"><label>Date</label><input id="o-date" type="date" value="' + today + '"/></div>'
        + '<div class="input-group"><label>Notes</label><textarea id="o-notes" placeholder="Context on this offer..."></textarea></div>'
-       + '</div><button class="btn btn-primary" onclick="saveOffer(\'' + clientId + '\')">Save offer</button></div>';
+       + '</div><button class="btn btn-primary" onclick="saveOffer(\'' + (clientId||'') + '\')">Save offer</button></div>';
 }
 
 async function saveOffer(clientId) {
@@ -566,7 +727,7 @@ async function saveOffer(clientId) {
   if (!addr || !amt) { document.getElementById('add-error').innerHTML = '<div class="error-msg">Address and amount are required</div>'; return; }
   var dir = document.getElementById('o-dir').value;
   var dr = await sb.from('deals').insert({
-    user_id:currentUser.id, client_id:clientId, address:addr, stage:'Active',
+    user_id:currentUser.id, client_id:clientId||null, address:addr, stage:'Active',
     our_offer:dir==='sent'?amt:null, their_offer:dir==='received'?amt:null
   }).select().single();
   if (!dr.data) { document.getElementById('add-error').innerHTML = '<div class="error-msg">Could not create deal record</div>'; return; }
@@ -577,9 +738,10 @@ async function saveOffer(clientId) {
     notes:document.getElementById('o-notes').value.trim()||null
   });
   if (or2.error) { document.getElementById('add-error').innerHTML = '<div class="error-msg">' + or2.error.message + '</div>'; return; }
-  await sb.rpc('evaluate_client_flag',{p_client_id:clientId});
+  if (clientId) await sb.rpc('evaluate_client_flag',{p_client_id:clientId});
   toast('Offer logged');
-  navigate('client-detail', clientId);
+  if (clientId) navigate('client-detail', clientId);
+  else navigate('reports');
 }
 
 // ── Upgrade ────────────────────────────────────────────────────
@@ -591,9 +753,7 @@ function featureList() {
   });
   return html + '</div>';
 }
-
 function stripeComingSoon() { toast('Payments coming soon — stay tuned!', 3000); }
-
 function screenUpgrade() {
   var tier = (currentProfile && currentProfile.tier) || 'free';
   if (tier === 'paid') {
@@ -611,16 +771,14 @@ function screenUpgrade() {
        + '<div style="font-size:16px;font-weight:500">Pro — Monthly</div>'
        + '<div style="font-size:20px;font-weight:500;color:#185FA5">$19<span style="font-size:13px;color:#888">/mo</span></div></div>'
        + '<div style="font-size:12px;color:#888;margin-bottom:14px">Billed monthly. Cancel anytime.</div>'
-       + featureList()
-       + '<button class="btn btn-primary" style="margin-top:14px" onclick="stripeComingSoon()">Get started — $19/mo</button></div>'
+       + featureList() + '<button class="btn btn-primary" style="margin-top:14px" onclick="stripeComingSoon()">Get started — $19/mo</button></div>'
        + '<div class="card">'
        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'
        + '<div style="font-size:16px;font-weight:500">Pro — Annual</div>'
        + '<div style="font-size:20px;font-weight:500;color:#185FA5">$16<span style="font-size:13px;color:#888">/mo</span></div></div>'
        + '<div style="font-size:12px;color:#888;margin-bottom:6px">$190 billed once per year.</div>'
        + '<div style="display:inline-block;font-size:11px;padding:2px 8px;border-radius:6px;background:#EAF3DE;color:#27500A;margin-bottom:14px">Save $38/year</div>'
-       + featureList()
-       + '<button class="btn btn-primary" style="margin-top:14px" onclick="stripeComingSoon()">Get started — $190/yr</button></div>'
+       + featureList() + '<button class="btn btn-primary" style="margin-top:14px" onclick="stripeComingSoon()">Get started — $190/yr</button></div>'
        + '<div class="card" style="background:#f5f5f3;border:none">'
        + '<div class="section-label">Free tier — current plan</div>'
        + '<div style="font-size:13px;color:#888;line-height:1.7">Up to 5 agents · Up to 5 clients · Core CRM features</div>'
@@ -629,51 +787,39 @@ function screenUpgrade() {
 
 // ── Account ────────────────────────────────────────────────────
 function screenAccount() {
-  var tier  = (currentProfile && currentProfile.tier)      || 'free';
-  var email = (currentUser    && currentUser.email)         || '—';
-  var name  = (currentProfile && currentProfile.full_name)  || '';
-
+  var tier  = (currentProfile && currentProfile.tier)     || 'free';
+  var email = (currentUser    && currentUser.email)        || '—';
+  var name  = (currentProfile && currentProfile.full_name) || '';
   var html = '<div class="header"><h1>Account</h1></div><div class="content">';
-
-  html += '<div class="card">'
-        + '<div class="section-label">Profile</div>'
+  html += '<div class="card"><div class="section-label">Profile</div>'
         + '<div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">'
-        + '<div class="avatar av-blue" style="width:48px;height:48px;font-size:16px">' + initials(name || email) + '</div>'
-        + '<div><div style="font-size:15px;font-weight:500">' + (name || 'Your account') + '</div>'
+        + '<div class="avatar av-blue" style="width:48px;height:48px;font-size:16px">' + initials(name||email) + '</div>'
+        + '<div><div style="font-size:15px;font-weight:500">' + (name||'Your account') + '</div>'
         + '<div style="font-size:13px;color:#888">' + email + '</div></div></div>'
         + '<div class="input-group" style="margin-bottom:0"><label>Display name</label>'
-        + '<input id="acc-name" placeholder="Your name" value="' + (name || '') + '"/></div>'
-        + '<button class="btn" style="margin-top:10px" onclick="saveName()">Save name</button>'
-        + '</div>';
-
-  html += '<div class="card">'
-        + '<div class="section-label">Plan</div>'
+        + '<input id="acc-name" placeholder="Your name" value="' + (name||'') + '"/></div>'
+        + '<button class="btn" style="margin-top:10px" onclick="saveName()">Save name</button></div>';
+  html += '<div class="card"><div class="section-label">Plan</div>'
         + '<div style="display:flex;justify-content:space-between;align-items:center">'
-        + '<div><div style="font-size:15px;font-weight:500">' + (tier === 'paid' ? 'Pro' : 'Free tier') + '</div>'
-        + '<div style="font-size:12px;color:#888;margin-top:2px">' + (tier === 'paid' ? 'Unlimited agents, clients + reporting' : 'Up to 5 agents and 5 clients') + '</div></div>'
-        + (tier === 'free' ? '<button class="upgrade-btn" onclick="navigate(\'upgrade\')">Upgrade</button>' : '<span class="item-badge badge-green">Active</span>')
+        + '<div><div style="font-size:15px;font-weight:500">' + (tier==='paid'?'Pro':'Free tier') + '</div>'
+        + '<div style="font-size:12px;color:#888;margin-top:2px">' + (tier==='paid'?'Unlimited agents, clients + reporting':'Up to 5 agents and 5 clients') + '</div></div>'
+        + (tier==='free'?'<button class="upgrade-btn" onclick="navigate(\'upgrade\')">Upgrade</button>':'<span class="item-badge badge-green">Active</span>')
         + '</div></div>';
-
-  html += '<div class="card">'
-        + '<div class="section-label">Security</div>'
+  html += '<div class="card"><div class="section-label">Security</div>'
         + '<div class="input-group"><label>New password</label><input id="acc-pw" type="password" placeholder="At least 6 characters"/></div>'
         + '<div class="input-group" style="margin-bottom:0"><label>Confirm new password</label><input id="acc-pw2" type="password" placeholder="Re-enter password"/></div>'
         + '<div id="pw-msg" style="margin-top:6px"></div>'
-        + '<button class="btn" style="margin-top:10px" onclick="changePassword()">Update password</button>'
-        + '</div>';
-
+        + '<button class="btn" style="margin-top:10px" onclick="changePassword()">Update password</button></div>';
   html += '<div class="card"><div class="section-label">Support</div>'
         + aRow('Email support',   'support@realtrack.app',  'window.open(\'mailto:support@realtrack.app\')')
         + aRow('Send feedback',   'Tell us what you think', 'toast(\'Feedback form coming soon!\')')
         + aRow('Report a bug',    'Something not working?', 'toast(\'Bug report coming soon!\')')
         + '</div>';
-
   html += '<div class="card"><div class="section-label">About</div>'
-        + aRow('Version',         '1.0.0-beta',             '')
-        + aRow('Terms of service','View terms',             'toast(\'Coming soon!\')')
-        + aRow('Privacy policy',  'View policy',            'toast(\'Coming soon!\')')
+        + aRow('Version',          '1.0.0-beta',  '')
+        + aRow('Terms of service', 'View terms',  'toast(\'Coming soon!\')')
+        + aRow('Privacy policy',   'View policy', 'toast(\'Coming soon!\')')
         + '</div>';
-
   html += '<button class="btn btn-danger" onclick="doLogout()">Sign out</button>';
   html += '</div>';
   return html;
