@@ -8,8 +8,8 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,sans-serif}
 body{background:#f5f5f3;display:flex;justify-content:center;align-items:flex-start;min-height:100vh;padding:24px 12px}
-.phone{width:375px;min-height:720px;background:#fff;border-radius:40px;border:1.5px solid rgba(0,0,0,0.15);overflow:hidden;position:relative;display:flex;flex-direction:column}
-.status-bar{background:#fff;padding:12px 24px 6px;display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:500;color:#888}
+.phone{width:375px;min-height:720px;background:#fff;border-radius:40px;border:1.5px solid rgba(0,0,0,0.15);overflow:hidden;display:flex;flex-direction:column}
+.status-bar{background:#fff;padding:12px 24px 6px;display:flex;justify-content:space-between;font-size:12px;font-weight:500;color:#888}
 .screen{flex:1;overflow-y:auto;display:flex;flex-direction:column}
 .nav-bar{background:#fff;border-top:0.5px solid rgba(0,0,0,0.1);display:flex;justify-content:space-around;padding:10px 0 16px}
 .nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px 12px;border-radius:8px}
@@ -84,9 +84,7 @@ body{background:#f5f5f3;display:flex;justify-content:center;align-items:flex-sta
 </style>
 </head>
 <body>
-
 <div id="toast" class="toast"></div>
-
 <div class="phone" id="app">
   <div class="status-bar"><span id="clock">9:41</span><span>&#9679;&#9679;&#9679;</span></div>
   <div class="screen" id="screen"><div class="loading">Loading...</div></div>
@@ -115,633 +113,562 @@ body{background:#f5f5f3;display:flex;justify-content:center;align-items:flex-sta
 </div>
 
 <script>
-// ─── Supabase init ───────────────────────────────────────────
+// ── Supabase init ──────────────────────────────────────────────
 const SUPA_URL  = 'https://bylkcfoqoehkgiiqscvl.supabase.co';
-const SUPA_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ5bGtjZm9xb2Voa2dpaXFzY3ZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0NTA5NDgsImV4cCI6MjA4OTAyNjk0OH0.nrCbebrNNg-bT1fes67ogCXHxhWfWkDa591db1MVsJo';
+const SUPA_ANON = 'sb_publishable_NkpWB9_qksTM-Kdqe7rJkg_OphNN-IL';
 const sb = supabase.createClient(SUPA_URL, SUPA_ANON);
 
-// ─── State ───────────────────────────────────────────────────
+// ── State ──────────────────────────────────────────────────────
 let currentUser = null;
 let currentProfile = null;
 
-// ─── Clock ───────────────────────────────────────────────────
+// ── Clock ──────────────────────────────────────────────────────
 function updateClock() {
   const n = new Date();
   document.getElementById('clock').textContent =
-    n.getHours().toString().padStart(2,'0') + ':' +
-    n.getMinutes().toString().padStart(2,'0');
+    n.getHours().toString().padStart(2, '0') + ':' +
+    n.getMinutes().toString().padStart(2, '0');
 }
 updateClock();
 setInterval(updateClock, 10000);
 
-// ─── Toast ───────────────────────────────────────────────────
-function toast(msg, dur=2500) {
+// ── Toast ──────────────────────────────────────────────────────
+function toast(msg, dur) {
+  dur = dur || 2500;
   const el = document.getElementById('toast');
   el.textContent = msg;
   el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), dur);
+  setTimeout(function() { el.classList.remove('show'); }, dur);
 }
 
-// ─── Navigation ──────────────────────────────────────────────
-const noNavScreens = ['login','agent-detail','client-detail','add-agent','add-client','add-visit','add-offer'];
+// ── Helpers ────────────────────────────────────────────────────
+function initials(name) {
+  return (name || '?').split(' ').map(function(n) { return n[0]; }).join('').toUpperCase().slice(0, 2);
+}
+
+var avColors = ['av-blue', 'av-teal', 'av-amber', 'av-purple', 'av-red'];
+function avColor(str) {
+  return avColors[(str || '').charCodeAt(0) % avColors.length];
+}
+
+function categoryBadge(cat) {
+  var map = { Preferred: 'green', Reliable: 'blue', Neutral: 'gray', Difficult: 'amber', Avoid: 'red' };
+  return '<span class="item-badge badge-' + (map[cat] || 'gray') + '">' + cat + '</span>';
+}
+
+function stageColor(stage) {
+  var map = { 'Active': 'stage-active', 'Under Contract': 'stage-contract', 'Closed': 'stage-closed', 'Fallen Through': 'stage-fallen', 'Pending': 'stage-pending' };
+  return map[stage] || 'stage-active';
+}
+
+function starStr(r) {
+  return '★'.repeat(r) + '☆'.repeat(5 - r);
+}
+
+function fmt(n) {
+  return n ? '$' + Number(n).toLocaleString() : '—';
+}
+
+function fmtPhone(el) {
+  var v = el.value.replace(/\D/g, '').slice(0, 10);
+  if (v.length >= 7) {
+    v = '(' + v.slice(0, 3) + ') ' + v.slice(3, 6) + '-' + v.slice(6);
+  } else if (v.length >= 4) {
+    v = '(' + v.slice(0, 3) + ') ' + v.slice(3);
+  } else if (v.length > 0) {
+    v = '(' + v;
+  }
+  el.value = v;
+}
+
+function fmtDollar(el) {
+  var raw = el.value.replace(/[^0-9]/g, '');
+  el.value = raw ? '$' + Number(raw).toLocaleString('en-US') : '';
+}
+
+function parseDollar(val) {
+  if (!val) return null;
+  var raw = val.replace(/[^0-9]/g, '');
+  return raw || null;
+}
+
+// ── Navigation ─────────────────────────────────────────────────
+var noNavScreens = ['login', 'agent-detail', 'client-detail', 'add-agent', 'add-client', 'add-visit', 'add-offer'];
 
 async function navigate(name, data) {
-  document.getElementById('nav').style.display = noNavScreens.includes(name) ? 'none' : 'flex';
-  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-  const navEl = document.getElementById('nav-' + name);
+  document.getElementById('nav').style.display = noNavScreens.indexOf(name) > -1 ? 'none' : 'flex';
+  document.querySelectorAll('.nav-item').forEach(function(el) { el.classList.remove('active'); });
+  var navEl = document.getElementById('nav-' + name);
   if (navEl) navEl.classList.add('active');
   document.getElementById('screen').innerHTML = '<div class="loading">Loading...</div>';
   await renderScreen(name, data);
 }
 
-// ─── Avatar helpers ──────────────────────────────────────────
-function initials(name) {
-  return (name||'?').split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
-}
-const avColors = ['av-blue','av-teal','av-amber','av-purple','av-red'];
-function avColor(str) { return avColors[(str||'').charCodeAt(0) % avColors.length]; }
-
-function categoryBadge(cat) {
-  const map = {Preferred:'green',Reliable:'blue',Neutral:'gray',Difficult:'amber',Avoid:'red'};
-  return `<span class="item-badge badge-${map[cat]||'gray'}">${cat}</span>`;
-}
-function stageColor(stage) {
-  const map = {'Active':'stage-active','Under Contract':'stage-contract','Closed':'stage-closed','Fallen Through':'stage-fallen','Pending':'stage-pending'};
-  return map[stage]||'stage-active';
-}
-function starStr(r) { return '★'.repeat(r)+'☆'.repeat(5-r); }
-function fmt(n) { return n ? '$'+Number(n).toLocaleString() : '—'; }
-
-// ─── Screen renderer ─────────────────────────────────────────
 async function renderScreen(name, data) {
-  const scr = document.getElementById('screen');
-  switch(name) {
-    case 'login':      scr.innerHTML = screenLogin(); break;
-    case 'dashboard':  scr.innerHTML = await screenDashboard(); break;
-    case 'agents':     scr.innerHTML = await screenAgents(); break;
-    case 'agent-detail': scr.innerHTML = await screenAgentDetail(data); break;
-    case 'clients':    scr.innerHTML = await screenClients(); break;
-    case 'client-detail': scr.innerHTML = await screenClientDetail(data); break;
-    case 'add':        scr.innerHTML = screenAdd(); break;
-    case 'add-agent':  scr.innerHTML = screenAddAgent(); break;
-    case 'add-client': scr.innerHTML = screenAddClient(); break;
-    case 'add-visit':  scr.innerHTML = screenAddVisit(data); break;
-    case 'add-offer':  scr.innerHTML = screenAddOffer(data); break;
-  }
+  var scr = document.getElementById('screen');
+  if (name === 'login')         { scr.innerHTML = screenLogin(); }
+  else if (name === 'dashboard'){ scr.innerHTML = await screenDashboard(); }
+  else if (name === 'agents')   { scr.innerHTML = await screenAgents(); }
+  else if (name === 'agent-detail') { scr.innerHTML = await screenAgentDetail(data); }
+  else if (name === 'clients')  { scr.innerHTML = await screenClients(); }
+  else if (name === 'client-detail') { scr.innerHTML = await screenClientDetail(data); }
+  else if (name === 'add')      { scr.innerHTML = screenAdd(); }
+  else if (name === 'add-agent'){ scr.innerHTML = screenAddAgent(); }
+  else if (name === 'add-client'){ scr.innerHTML = screenAddClient(); }
+  else if (name === 'add-visit'){ scr.innerHTML = screenAddVisit(data); }
+  else if (name === 'add-offer'){ scr.innerHTML = screenAddOffer(data); }
 }
 
-// ─── LOGIN ───────────────────────────────────────────────────
+// ── Login ──────────────────────────────────────────────────────
 function screenLogin() {
-  return `
-  <div class="login-wrap">
-    <div>
-      <div class="login-logo">RealTrack</div>
-      <div class="login-sub">Smart CRM for realtors</div>
-    </div>
-    <div id="login-error"></div>
-    <div class="input-group"><label>Email</label><input id="l-email" type="email" placeholder="you@email.com"/></div>
-    <div class="input-group"><label>Password</label><input id="l-pass" type="password" placeholder="••••••••"/></div>
-    <button class="btn btn-primary" onclick="doLogin()">Sign in</button>
-    <button class="btn" onclick="doSignup()">Create account</button>
-    <div style="text-align:center;font-size:12px;color:#aaa;margin-top:8px">Free tier: 5 agents + 5 clients</div>
-  </div>`;
+  return '<div class="login-wrap">'
+    + '<div><div class="login-logo">RealTrack</div><div class="login-sub">Smart CRM for realtors</div></div>'
+    + '<div id="login-error"></div>'
+    + '<div class="input-group"><label>Email</label><input id="l-email" type="email" placeholder="you@email.com"/></div>'
+    + '<div class="input-group"><label>Password</label><input id="l-pass" type="password" placeholder="••••••••"/></div>'
+    + '<button class="btn btn-primary" onclick="doLogin()">Sign in</button>'
+    + '<button class="btn" onclick="doSignup()">Create account</button>'
+    + '<div style="text-align:center;font-size:12px;color:#aaa;margin-top:8px">Free tier: 5 agents + 5 clients</div>'
+    + '</div>';
 }
 
 async function doLogin() {
-  const email = document.getElementById('l-email').value.trim();
-  const pass  = document.getElementById('l-pass').value;
-  const {data, error} = await sb.auth.signInWithPassword({email, password:pass});
-  if (error) {
-    document.getElementById('login-error').innerHTML = `<div class="error-msg">${error.message}</div>`;
+  var email = document.getElementById('l-email').value.trim();
+  var pass  = document.getElementById('l-pass').value;
+  var result = await sb.auth.signInWithPassword({ email: email, password: pass });
+  if (result.error) {
+    document.getElementById('login-error').innerHTML = '<div class="error-msg">' + result.error.message + '</div>';
     return;
   }
-  await afterAuth(data.user);
+  await afterAuth(result.data.user);
 }
 
 async function doSignup() {
-  const email = document.getElementById('l-email').value.trim();
-  const pass  = document.getElementById('l-pass').value;
-  const {data, error} = await sb.auth.signUp({email, password:pass});
-  if (error) {
-    document.getElementById('login-error').innerHTML = `<div class="error-msg">${error.message}</div>`;
+  var email = document.getElementById('l-email').value.trim();
+  var pass  = document.getElementById('l-pass').value;
+  var result = await sb.auth.signUp({ email: email, password: pass });
+  if (result.error) {
+    document.getElementById('login-error').innerHTML = '<div class="error-msg">' + result.error.message + '</div>';
     return;
   }
-  if (data.user) {
-    await sb.from('profiles').upsert({id:data.user.id, email, tier:'free'});
+  if (result.data.user) {
+    await sb.from('profiles').upsert({ id: result.data.user.id, email: email, tier: 'free' });
     toast('Account created! Check email to confirm.');
-    await afterAuth(data.user);
+    await afterAuth(result.data.user);
   }
 }
 
 async function afterAuth(user) {
   currentUser = user;
-  const {data} = await sb.from('profiles').select('*').eq('id', user.id).single();
-  currentProfile = data;
+  var result = await sb.from('profiles').select('*').eq('id', user.id).single();
+  currentProfile = result.data;
   navigate('dashboard');
 }
 
 async function doLogout() {
   await sb.auth.signOut();
-  currentUser = null; currentProfile = null;
+  currentUser = null;
+  currentProfile = null;
   document.getElementById('nav').style.display = 'none';
   navigate('login');
 }
 
-// ─── DASHBOARD ───────────────────────────────────────────────
+// ── Dashboard ──────────────────────────────────────────────────
 async function screenDashboard() {
-  const uid = currentUser.id;
-  const [{data:agents},{data:clients},{data:deals},{data:visits}] = await Promise.all([
-    sb.from('agents').select('id').eq('user_id',uid),
-    sb.from('clients').select('id,flag_reason,retainer_required,full_name').eq('user_id',uid),
-    sb.from('deals').select('id,stage').eq('user_id',uid),
-    sb.from('visits').select('id,created_at').eq('user_id',uid)
+  var uid = currentUser.id;
+  var results = await Promise.all([
+    sb.from('agents').select('id').eq('user_id', uid),
+    sb.from('clients').select('id,flag_reason,retainer_required,full_name').eq('user_id', uid),
+    sb.from('deals').select('id,stage').eq('user_id', uid),
+    sb.from('visits').select('id,created_at').eq('user_id', uid)
   ]);
-  const now = new Date();
-  const thisMonth = (visits||[]).filter(v => new Date(v.created_at).getMonth()===now.getMonth()).length;
-  const activeDeals = (deals||[]).filter(d=>d.stage==='Active'||d.stage==='Under Contract').length;
-  const closedDeals = (deals||[]).filter(d=>d.stage==='Closed').length;
-  const flagged = (clients||[]).filter(c=>c.flag_reason);
-  const tier = currentProfile?.tier||'free';
-  const agentCount = (agents||[]).length;
-  const clientCount = (clients||[]).length;
+  var agents  = results[0].data || [];
+  var clients = results[1].data || [];
+  var deals   = results[2].data || [];
+  var visits  = results[3].data || [];
 
-  const recentClients = flagged.slice(0,3);
+  var now = new Date();
+  var thisMonth = visits.filter(function(v) { return new Date(v.created_at).getMonth() === now.getMonth(); }).length;
+  var activeDeals = deals.filter(function(d) { return d.stage === 'Active' || d.stage === 'Under Contract'; }).length;
+  var closedDeals = deals.filter(function(d) { return d.stage === 'Closed'; }).length;
+  var flagged = clients.filter(function(c) { return c.flag_reason; });
+  var tier = (currentProfile && currentProfile.tier) || 'free';
 
-  return `
-  <div class="header"><h1>Dashboard</h1><p>${currentUser.email}</p></div>
-  <div class="content">
-    ${tier==='free'?`<div class="free-tier"><span class="free-tier-label">Free — ${agentCount}/5 agents, ${clientCount}/5 clients</span><button class="upgrade-btn" onclick="toast('Stripe coming soon!')">Upgrade</button></div>`:''}
-    <div class="metric-grid">
-      <div class="metric"><div class="metric-label">Active deals</div><div class="metric-value">${activeDeals}</div></div>
-      <div class="metric"><div class="metric-label">Visits this month</div><div class="metric-value warn">${thisMonth}</div></div>
-      <div class="metric"><div class="metric-label">Flagged clients</div><div class="metric-value danger">${flagged.length}</div></div>
-      <div class="metric"><div class="metric-label">Closed (all time)</div><div class="metric-value good">${closedDeals}</div></div>
-    </div>
-    ${flagged.length>0?`
-    <div class="card">
-      <div class="section-label">Flagged clients</div>
-      ${recentClients.map(c=>`
-      <div class="list-item" onclick="navigate('client-detail','${c.id}')">
-        <div class="avatar ${avColor(c.full_name)}">${initials(c.full_name)}</div>
-        <div class="item-info"><div class="item-name">${c.full_name}</div><div class="item-sub">${c.flag_reason}</div></div>
-        <div class="item-right">${c.retainer_required?'<span class="item-badge badge-red">Retainer req.</span>':'<span class="item-badge badge-amber">Flagged</span>'}</div>
-      </div>`).join('')}
-    </div>`:''}
-    <button class="btn" onclick="doLogout()" style="margin-top:8px;color:#888;font-size:13px;border:none">Sign out</button>
-  </div>`;
+  var html = '<div class="header"><h1>Dashboard</h1><p>' + currentUser.email + '</p></div>';
+  html += '<div class="content">';
+  if (tier === 'free') {
+    html += '<div class="free-tier"><span class="free-tier-label">Free — ' + agents.length + '/5 agents, ' + clients.length + '/5 clients</span>'
+         + '<button class="upgrade-btn" onclick="toast(\'Stripe coming soon!\')">Upgrade</button></div>';
+  }
+  html += '<div class="metric-grid">'
+       + '<div class="metric"><div class="metric-label">Active deals</div><div class="metric-value">' + activeDeals + '</div></div>'
+       + '<div class="metric"><div class="metric-label">Visits this month</div><div class="metric-value warn">' + thisMonth + '</div></div>'
+       + '<div class="metric"><div class="metric-label">Flagged clients</div><div class="metric-value danger">' + flagged.length + '</div></div>'
+       + '<div class="metric"><div class="metric-label">Closed (all time)</div><div class="metric-value good">' + closedDeals + '</div></div>'
+       + '</div>';
+  if (flagged.length > 0) {
+    html += '<div class="card"><div class="section-label">Flagged clients</div>';
+    flagged.slice(0, 3).forEach(function(c) {
+      html += '<div class="list-item" onclick="navigate(\'client-detail\',\'' + c.id + '\')">'
+            + '<div class="avatar ' + avColor(c.full_name) + '">' + initials(c.full_name) + '</div>'
+            + '<div class="item-info"><div class="item-name">' + c.full_name + '</div><div class="item-sub">' + c.flag_reason + '</div></div>'
+            + '<div class="item-right">' + (c.retainer_required ? '<span class="item-badge badge-red">Retainer req.</span>' : '<span class="item-badge badge-amber">Flagged</span>') + '</div>'
+            + '</div>';
+    });
+    html += '</div>';
+  }
+  html += '<button class="btn" onclick="doLogout()" style="margin-top:8px;color:#888;font-size:13px;border:none">Sign out</button>';
+  html += '</div>';
+  return html;
 }
 
-// ─── AGENTS ──────────────────────────────────────────────────
+// ── Agents ─────────────────────────────────────────────────────
 async function screenAgents() {
-  const {data:agents, error} = await sb.from('agents').select('*').eq('user_id',currentUser.id).order('full_name');
-  if (error) return `<div class="content"><div class="error-msg">${error.message}</div></div>`;
-  if (!agents.length) return `<div class="header"><h1>Agents</h1><p>No agents yet</p></div><div class="content"><button class="btn btn-primary" onclick="navigate('add-agent')">+ Add your first agent</button></div>`;
-  return `
-  <div class="header"><h1>Agents</h1><p>${agents.length} tracked</p></div>
-  <div class="content">
-    <div class="card">
-      ${agents.map(a=>`
-      <div class="list-item" onclick="navigate('agent-detail','${a.id}')">
-        <div class="avatar ${avColor(a.full_name)}">${initials(a.full_name)}</div>
-        <div class="item-info"><div class="item-name">${a.full_name}</div><div class="item-sub">${a.brokerage||'—'}</div></div>
-        <div class="item-right"><div class="stars">${starStr(a.rating)}</div>${categoryBadge(a.category)}</div>
-      </div>`).join('')}
-    </div>
-    <button class="btn" onclick="navigate('add-agent')">+ Add agent</button>
-  </div>`;
+  var result = await sb.from('agents').select('*').eq('user_id', currentUser.id).order('full_name');
+  if (result.error) return '<div class="content"><div class="error-msg">' + result.error.message + '</div></div>';
+  var agents = result.data || [];
+  if (!agents.length) {
+    return '<div class="header"><h1>Agents</h1><p>No agents yet</p></div>'
+         + '<div class="content"><button class="btn btn-primary" onclick="navigate(\'add-agent\')">+ Add your first agent</button></div>';
+  }
+  var html = '<div class="header"><h1>Agents</h1><p>' + agents.length + ' tracked</p></div><div class="content"><div class="card">';
+  agents.forEach(function(a) {
+    html += '<div class="list-item" onclick="navigate(\'agent-detail\',\'' + a.id + '\')">'
+          + '<div class="avatar ' + avColor(a.full_name) + '">' + initials(a.full_name) + '</div>'
+          + '<div class="item-info"><div class="item-name">' + a.full_name + '</div><div class="item-sub">' + (a.brokerage || '—') + '</div></div>'
+          + '<div class="item-right"><div class="stars">' + starStr(a.rating) + '</div>' + categoryBadge(a.category) + '</div>'
+          + '</div>';
+  });
+  html += '</div><button class="btn" onclick="navigate(\'add-agent\')">+ Add agent</button></div>';
+  return html;
 }
 
 async function screenAgentDetail(agentId) {
-  const [{data:agent},{data:tags},{data:deals}] = await Promise.all([
-    sb.from('agents').select('*').eq('id',agentId).single(),
-    sb.from('agent_tags').select('tag').eq('agent_id',agentId),
-    sb.from('deals').select('*').eq('agent_id',agentId).order('created_at',{ascending:false})
+  var results = await Promise.all([
+    sb.from('agents').select('*').eq('id', agentId).single(),
+    sb.from('agent_tags').select('tag').eq('agent_id', agentId),
+    sb.from('deals').select('*').eq('agent_id', agentId).order('created_at', { ascending: false })
   ]);
-  if (!agent) return `<div class="content"><div class="error-msg">Agent not found</div></div>`;
-  return `
-  <div class="detail-hero">
-    <div class="avatar ${avColor(agent.full_name)}" style="width:52px;height:52px;font-size:16px">${initials(agent.full_name)}</div>
-    <div>
-      <div style="font-size:17px;font-weight:500">${agent.full_name}</div>
-      <div style="font-size:13px;color:#888">${agent.brokerage||'—'}</div>
-      <div class="stars" style="margin-top:4px">${starStr(agent.rating)}</div>
-    </div>
-  </div>
-  <div class="content">
-    <span class="back-btn" onclick="navigate('agents')">← Back</span>
-    <div class="card">
-      <div class="section-label">Category & tags</div>
-      ${categoryBadge(agent.category)}
-      <div style="margin-top:8px">${(tags||[]).map(t=>`<span class="tag">${t.tag}</span>`).join('')||'<span style="font-size:12px;color:#aaa">No tags</span>'}</div>
-    </div>
-    ${agent.notes?`<div class="card"><div class="section-label">Notes</div><div style="font-size:13px;line-height:1.6">${agent.notes}</div></div>`:''}
-    <div class="card">
-      <div class="section-label">Deal history (${(deals||[]).length})</div>
-      ${(deals||[]).length?deals.map(d=>`
-      <div class="deal-row">
-        <div><div style="font-weight:500">${d.address}</div><div style="margin-top:4px"><span class="stage-dot ${stageColor(d.stage)}"></span><span style="font-size:12px;color:#888">${d.stage}</span></div></div>
-        <div style="font-weight:500">${fmt(d.our_offer||d.their_offer)}</div>
-      </div>`).join(''):'<div style="font-size:13px;color:#aaa">No deals yet</div>'}
-    </div>
-  </div>`;
+  var agent = results[0].data;
+  var tags  = results[1].data || [];
+  var deals = results[2].data || [];
+  if (!agent) return '<div class="content"><div class="error-msg">Agent not found</div></div>';
+
+  var html = '<div class="detail-hero">'
+           + '<div class="avatar ' + avColor(agent.full_name) + '" style="width:52px;height:52px;font-size:16px">' + initials(agent.full_name) + '</div>'
+           + '<div><div style="font-size:17px;font-weight:500">' + agent.full_name + '</div>'
+           + '<div style="font-size:13px;color:#888">' + (agent.brokerage || '—') + '</div>'
+           + '<div class="stars" style="margin-top:4px">' + starStr(agent.rating) + '</div></div></div>';
+  html += '<div class="content"><span class="back-btn" onclick="navigate(\'agents\')">← Back</span>';
+  html += '<div class="card"><div class="section-label">Category &amp; tags</div>'
+        + categoryBadge(agent.category)
+        + '<div style="margin-top:8px">'
+        + (tags.length ? tags.map(function(t) { return '<span class="tag">' + t.tag + '</span>'; }).join('') : '<span style="font-size:12px;color:#aaa">No tags</span>')
+        + '</div></div>';
+  if (agent.notes) {
+    html += '<div class="card"><div class="section-label">Notes</div><div style="font-size:13px;line-height:1.6">' + agent.notes + '</div></div>';
+  }
+  html += '<div class="card"><div class="section-label">Deal history (' + deals.length + ')</div>';
+  if (deals.length) {
+    deals.forEach(function(d) {
+      html += '<div class="deal-row">'
+            + '<div><div style="font-weight:500">' + d.address + '</div>'
+            + '<div style="margin-top:4px"><span class="stage-dot ' + stageColor(d.stage) + '"></span><span style="font-size:12px;color:#888">' + d.stage + '</span></div></div>'
+            + '<div style="font-weight:500">' + fmt(d.our_offer || d.their_offer) + '</div>'
+            + '</div>';
+    });
+  } else {
+    html += '<div style="font-size:13px;color:#aaa">No deals yet</div>';
+  }
+  html += '</div></div>';
+  return html;
 }
 
-// ─── CLIENTS ─────────────────────────────────────────────────
+// ── Clients ────────────────────────────────────────────────────
 async function screenClients() {
-  const {data:clients, error} = await sb.from('clients').select('*').eq('user_id',currentUser.id).order('full_name');
-  if (error) return `<div class="content"><div class="error-msg">${error.message}</div></div>`;
-  if (!clients.length) return `<div class="header"><h1>Clients</h1><p>No clients yet</p></div><div class="content"><button class="btn btn-primary" onclick="navigate('add-client')">+ Add your first client</button></div>`;
-
-  function clientBadge(c) {
-    if (c.retainer_required) return '<span class="item-badge badge-red">Retainer req.</span>';
-    if (c.flag_reason) return '<span class="item-badge badge-amber">Flagged</span>';
-    return '<span class="item-badge badge-green">Good standing</span>';
+  var result = await sb.from('clients').select('*').eq('user_id', currentUser.id).order('full_name');
+  if (result.error) return '<div class="content"><div class="error-msg">' + result.error.message + '</div></div>';
+  var clients = result.data || [];
+  if (!clients.length) {
+    return '<div class="header"><h1>Clients</h1><p>No clients yet</p></div>'
+         + '<div class="content"><button class="btn btn-primary" onclick="navigate(\'add-client\')">+ Add your first client</button></div>';
   }
-
-  return `
-  <div class="header"><h1>Clients</h1><p>${clients.length} tracked</p></div>
-  <div class="content">
-    <div class="card">
-      ${clients.map(c=>`
-      <div class="list-item" onclick="navigate('client-detail','${c.id}')">
-        <div class="avatar ${avColor(c.full_name)}">${initials(c.full_name)}</div>
-        <div class="item-info"><div class="item-name">${c.full_name}</div><div class="item-sub">${c.phone||c.email||'—'}</div></div>
-        <div class="item-right">${clientBadge(c)}</div>
-      </div>`).join('')}
-    </div>
-    <button class="btn" onclick="navigate('add-client')">+ Add client</button>
-  </div>`;
+  var html = '<div class="header"><h1>Clients</h1><p>' + clients.length + ' tracked</p></div><div class="content"><div class="card">';
+  clients.forEach(function(c) {
+    var badge;
+    if (c.retainer_required) { badge = '<span class="item-badge badge-red">Retainer req.</span>'; }
+    else if (c.flag_reason)  { badge = '<span class="item-badge badge-amber">Flagged</span>'; }
+    else                     { badge = '<span class="item-badge badge-green">Good standing</span>'; }
+    html += '<div class="list-item" onclick="navigate(\'client-detail\',\'' + c.id + '\')">'
+          + '<div class="avatar ' + avColor(c.full_name) + '">' + initials(c.full_name) + '</div>'
+          + '<div class="item-info"><div class="item-name">' + c.full_name + '</div><div class="item-sub">' + (c.phone || c.email || '—') + '</div></div>'
+          + '<div class="item-right">' + badge + '</div>'
+          + '</div>';
+  });
+  html += '</div><button class="btn" onclick="navigate(\'add-client\')">+ Add client</button></div>';
+  return html;
 }
 
 async function screenClientDetail(clientId) {
-  const [{data:client},{data:visits},{data:deals}] = await Promise.all([
-    sb.from('clients').select('*').eq('id',clientId).single(),
-    sb.from('visits').select('*').eq('client_id',clientId).order('visit_date',{ascending:false}),
-    sb.from('deals').select('*,offers(*)').eq('client_id',clientId).order('created_at',{ascending:false})
+  var results = await Promise.all([
+    sb.from('clients').select('*').eq('id', clientId).single(),
+    sb.from('visits').select('*').eq('client_id', clientId).order('visit_date', { ascending: false }),
+    sb.from('deals').select('*,offers(*)').eq('client_id', clientId).order('created_at', { ascending: false })
   ]);
-  if (!client) return `<div class="content"><div class="error-msg">Client not found</div></div>`;
-  const visitCount = (visits||[]).length;
-  const allOffers = (deals||[]).flatMap(d=>d.offers||[]);
-  const visitPct = Math.min(visitCount/10*100,100);
-  const visitColor = visitCount>6?'#A32D2D':visitCount>3?'#BA7517':'#185FA5';
+  var client = results[0].data;
+  var visits = results[1].data || [];
+  var deals  = results[2].data || [];
+  if (!client) return '<div class="content"><div class="error-msg">Client not found</div></div>';
 
-  return `
-  <div class="detail-hero">
-    <div class="avatar ${avColor(client.full_name)}" style="width:52px;height:52px;font-size:16px">${initials(client.full_name)}</div>
-    <div>
-      <div style="font-size:17px;font-weight:500">${client.full_name}</div>
-      <div style="font-size:13px;color:#888">${visitCount} visits · ${allOffers.length} offers</div>
-    </div>
-  </div>
-  <div class="content">
-    <span class="back-btn" onclick="navigate('clients')">← Back</span>
-    ${client.retainer_required?'<div class="retainer-badge">&#9888; Retainer fee required</div>':''}
-    ${client.flag_reason?`<div class="flag-banner">&#9873; <strong>Flagged:</strong> ${client.flag_reason}</div>`:''}
-    <div class="card">
-      <div class="section-label">Visit history (${visitCount})</div>
-      <div class="progress-bar"><div class="progress-fill" style="width:${visitPct}%;background:${visitColor}"></div></div>
-      <div style="margin-top:10px">
-        ${(visits||[]).slice(0,5).map(v=>`
-        <div class="deal-row"><span style="color:#888">${v.visit_date}</span><span style="font-weight:500;font-size:12px">${v.address}</span></div>`).join('')||'<div style="font-size:13px;color:#aaa">No visits logged</div>'}
-      </div>
-    </div>
-    <div class="card">
-      <div class="section-label">Offers (${allOffers.length})</div>
-      ${allOffers.slice(0,5).map(o=>`
-      <div class="deal-row">
-        <span style="color:#888">${o.offer_date} · ${o.direction}</span>
-        <span style="font-weight:500">${fmt(o.amount)} <span class="item-badge badge-${o.status==='Accepted'?'green':o.status==='Rejected'?'red':'gray'}">${o.status}</span></span>
-      </div>`).join('')||'<div style="font-size:13px;color:#aaa">No offers logged</div>'}
-    </div>
-    ${client.notes?`<div class="card"><div class="section-label">Notes</div><div style="font-size:13px;line-height:1.6">${client.notes}</div></div>`:''}
-    <div style="display:flex;gap:8px">
-      <button class="btn" style="flex:1" onclick="navigate('add-visit','${client.id}')">Log visit</button>
-      <button class="btn" style="flex:1" onclick="navigate('add-offer','${client.id}')">Log offer</button>
-    </div>
-    ${!client.retainer_required?`<button class="btn btn-danger" onclick="setRetainer('${client.id}')">Mark retainer required</button>`:''}
-  </div>`;
+  var allOffers = [];
+  deals.forEach(function(d) { if (d.offers) allOffers = allOffers.concat(d.offers); });
+  var visitCount = visits.length;
+  var visitPct   = Math.min(visitCount / 10 * 100, 100);
+  var visitColor = visitCount > 6 ? '#A32D2D' : visitCount > 3 ? '#BA7517' : '#185FA5';
+
+  var html = '<div class="detail-hero">'
+           + '<div class="avatar ' + avColor(client.full_name) + '" style="width:52px;height:52px;font-size:16px">' + initials(client.full_name) + '</div>'
+           + '<div><div style="font-size:17px;font-weight:500">' + client.full_name + '</div>'
+           + '<div style="font-size:13px;color:#888">' + visitCount + ' visits · ' + allOffers.length + ' offers</div></div></div>';
+  html += '<div class="content"><span class="back-btn" onclick="navigate(\'clients\')">← Back</span>';
+  if (client.retainer_required) { html += '<div class="retainer-badge">&#9888; Retainer fee required</div>'; }
+  if (client.flag_reason)       { html += '<div class="flag-banner">&#9873; <strong>Flagged:</strong> ' + client.flag_reason + '</div>'; }
+
+  html += '<div class="card"><div class="section-label">Visit history (' + visitCount + ')</div>'
+        + '<div class="progress-bar"><div class="progress-fill" style="width:' + visitPct + '%;background:' + visitColor + '"></div></div>'
+        + '<div style="margin-top:10px">';
+  if (visits.length) {
+    visits.slice(0, 5).forEach(function(v) {
+      html += '<div class="deal-row"><span style="color:#888">' + v.visit_date + '</span><span style="font-weight:500;font-size:12px">' + v.address + '</span></div>';
+    });
+  } else {
+    html += '<div style="font-size:13px;color:#aaa">No visits logged</div>';
+  }
+  html += '</div></div>';
+
+  html += '<div class="card"><div class="section-label">Offers (' + allOffers.length + ')</div>';
+  if (allOffers.length) {
+    allOffers.slice(0, 5).forEach(function(o) {
+      var sc = o.status === 'Accepted' ? 'green' : o.status === 'Rejected' ? 'red' : 'gray';
+      html += '<div class="deal-row">'
+            + '<span style="color:#888">' + o.offer_date + ' · ' + o.direction + '</span>'
+            + '<span style="font-weight:500">' + fmt(o.amount) + ' <span class="item-badge badge-' + sc + '">' + o.status + '</span></span>'
+            + '</div>';
+    });
+  } else {
+    html += '<div style="font-size:13px;color:#aaa">No offers logged</div>';
+  }
+  html += '</div>';
+
+  if (client.notes) {
+    html += '<div class="card"><div class="section-label">Notes</div><div style="font-size:13px;line-height:1.6">' + client.notes + '</div></div>';
+  }
+  html += '<div style="display:flex;gap:8px">'
+        + '<button class="btn" style="flex:1" onclick="navigate(\'add-visit\',\'' + clientId + '\')">Log visit</button>'
+        + '<button class="btn" style="flex:1" onclick="navigate(\'add-offer\',\'' + clientId + '\')">Log offer</button>'
+        + '</div>';
+  if (!client.retainer_required) {
+    html += '<button class="btn btn-danger" onclick="setRetainer(\'' + clientId + '\')">Mark retainer required</button>';
+  }
+  html += '</div>';
+  return html;
 }
 
 async function setRetainer(clientId) {
-  const {error} = await sb.from('clients').update({retainer_required:true}).eq('id',clientId);
-  if (error) { toast('Error: '+error.message); return; }
+  var result = await sb.from('clients').update({ retainer_required: true }).eq('id', clientId);
+  if (result.error) { toast('Error: ' + result.error.message); return; }
   toast('Retainer flag saved');
   navigate('client-detail', clientId);
 }
 
-// ─── ADD SCREENS ─────────────────────────────────────────────
+// ── Add screens ────────────────────────────────────────────────
 function screenAdd() {
-  return `
-  <div class="header"><h1>Add new</h1></div>
-  <div class="content">
-    <div class="card" style="cursor:pointer" onclick="navigate('add-agent')">
-      <div style="display:flex;align-items:center;gap:14px">
-        <div style="width:42px;height:42px;border-radius:10px;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-size:20px">&#128100;</div>
-        <div><div style="font-weight:500;font-size:15px">Add agent</div><div style="font-size:13px;color:#888">Track a new agent relationship</div></div>
-      </div>
-    </div>
-    <div class="card" style="cursor:pointer" onclick="navigate('add-client')">
-      <div style="display:flex;align-items:center;gap:14px">
-        <div style="width:42px;height:42px;border-radius:10px;background:#E1F5EE;display:flex;align-items:center;justify-content:center;font-size:20px">&#128101;</div>
-        <div><div style="font-weight:500;font-size:15px">Add client</div><div style="font-size:13px;color:#888">Track a new buyer or seller</div></div>
-      </div>
-    </div>
-  </div>`;
+  return '<div class="header"><h1>Add new</h1></div>'
+       + '<div class="content">'
+       + '<div class="card" style="cursor:pointer" onclick="navigate(\'add-agent\')">'
+       + '<div style="display:flex;align-items:center;gap:14px">'
+       + '<div style="width:42px;height:42px;border-radius:10px;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-size:20px">&#128100;</div>'
+       + '<div><div style="font-weight:500;font-size:15px">Add agent</div><div style="font-size:13px;color:#888">Track a new agent relationship</div></div>'
+       + '</div></div>'
+       + '<div class="card" style="cursor:pointer" onclick="navigate(\'add-client\')">'
+       + '<div style="display:flex;align-items:center;gap:14px">'
+       + '<div style="width:42px;height:42px;border-radius:10px;background:#E1F5EE;display:flex;align-items:center;justify-content:center;font-size:20px">&#128101;</div>'
+       + '<div><div style="font-weight:500;font-size:15px">Add client</div><div style="font-size:13px;color:#888">Track a new buyer or seller</div></div>'
+       + '</div></div>'
+       + '</div>';
 }
 
 function screenAddAgent() {
-  return `
-  <div class="header"><h1>New agent</h1></div>
-  <div class="content">
-    <span class="back-btn" onclick="navigate('agents')">← Cancel</span>
-    <div id="add-error"></div>
-    <div class="card">
-      <div class="input-group"><label>Full name *</label><input id="a-name" placeholder="Sandra Lee"/></div>
-      <div class="input-group"><label>Brokerage</label><input id="a-brokerage" placeholder="Compass"/></div>
-      <div class="input-group"><label>Phone</label><input id="a-phone" type="tel" placeholder="(555) 000-0000"/></div>
-      <div class="input-group"><label>Email</label><input id="a-email" type="email" placeholder="agent@email.com"/></div>
-      <div class="input-group"><label>Category</label>
-        <select id="a-cat"><option>Preferred</option><option>Reliable</option><option selected>Neutral</option><option>Difficult</option><option>Avoid</option></select>
-      </div>
-      <div class="input-group"><label>Rating</label>
-        <select id="a-rating"><option value="5">5 — Excellent</option><option value="4">4 — Good</option><option value="3" selected>3 — Neutral</option><option value="2">2 — Poor</option><option value="1">1 — Avoid</option></select>
-      </div>
-      <div class="input-group"><label>Tags (comma-separated)</label><input id="a-tags" placeholder="fast responder, fair offers"/></div>
-      <div class="input-group"><label>Notes</label><textarea id="a-notes" placeholder="Anything notable…"></textarea></div>
-    </div>
-    <button class="btn btn-primary" onclick="saveAgent()">Save agent</button>
-  </div>`;
+  return '<div class="header"><h1>New agent</h1></div>'
+       + '<div class="content">'
+       + '<span class="back-btn" onclick="navigate(\'agents\')">← Cancel</span>'
+       + '<div id="add-error"></div>'
+       + '<div class="card">'
+       + '<div class="input-group"><label>Full name *</label><input id="a-name" placeholder="Sandra Lee"/></div>'
+       + '<div class="input-group"><label>Brokerage</label><input id="a-brokerage" placeholder="Compass"/></div>'
+       + '<div class="input-group"><label>Phone</label><input id="a-phone" type="tel" inputmode="tel" placeholder="(555) 000-0000" oninput="fmtPhone(this)"/></div>'
+       + '<div class="input-group"><label>Email</label><input id="a-email" type="email" placeholder="agent@email.com"/></div>'
+       + '<div class="input-group"><label>Category</label>'
+       + '<select id="a-cat"><option>Preferred</option><option>Reliable</option><option selected>Neutral</option><option>Difficult</option><option>Avoid</option></select></div>'
+       + '<div class="input-group"><label>Rating</label>'
+       + '<select id="a-rating"><option value="5">5 — Excellent</option><option value="4">4 — Good</option><option value="3" selected>3 — Neutral</option><option value="2">2 — Poor</option><option value="1">1 — Avoid</option></select></div>'
+       + '<div class="input-group"><label>Tags (comma-separated)</label><input id="a-tags" placeholder="fast responder, fair offers"/></div>'
+       + '<div class="input-group"><label>Notes</label><textarea id="a-notes" placeholder="Anything notable..."></textarea></div>'
+       + '</div>'
+       + '<button class="btn btn-primary" onclick="saveAgent()">Save agent</button>'
+       + '</div>';
 }
 
 async function saveAgent() {
-  const name = document.getElementById('a-name').value.trim();
-  if (!name) { document.getElementById('add-error').innerHTML='<div class="error-msg">Name is required</div>'; return; }
-  const allowed = await sb.rpc('check_tier_limit',{p_user_id:currentUser.id, p_table:'agents'});
-  if (!allowed.data) { document.getElementById('add-error').innerHTML='<div class="error-msg">Free tier limit reached (5 agents). Upgrade to add more.</div>'; return; }
-  const {data:agent, error} = await sb.from('agents').insert({
-    user_id: currentUser.id,
+  var name = document.getElementById('a-name').value.trim();
+  if (!name) { document.getElementById('add-error').innerHTML = '<div class="error-msg">Name is required</div>'; return; }
+  var allowed = await sb.rpc('check_tier_limit', { p_user_id: currentUser.id, p_table: 'agents' });
+  if (!allowed.data) { document.getElementById('add-error').innerHTML = '<div class="error-msg">Free tier limit reached (5 agents). Upgrade to add more.</div>'; return; }
+  var result = await sb.from('agents').insert({
+    user_id:   currentUser.id,
     full_name: name,
-    brokerage: document.getElementById('a-brokerage').value.trim()||null,
-    phone: document.getElementById('a-phone').value.trim()||null,
-    email: document.getElementById('a-email').value.trim()||null,
-    category: document.getElementById('a-cat').value,
-    rating: parseInt(document.getElementById('a-rating').value),
-    notes: document.getElementById('a-notes').value.trim()||null
+    brokerage: document.getElementById('a-brokerage').value.trim() || null,
+    phone:     document.getElementById('a-phone').value.trim() || null,
+    email:     document.getElementById('a-email').value.trim() || null,
+    category:  document.getElementById('a-cat').value,
+    rating:    parseInt(document.getElementById('a-rating').value),
+    notes:     document.getElementById('a-notes').value.trim() || null
   }).select().single();
-  if (error) { document.getElementById('add-error').innerHTML=`<div class="error-msg">${error.message}</div>`; return; }
-  const tags = document.getElementById('a-tags').value.split(',').map(t=>t.trim()).filter(Boolean);
-  if (tags.length) await sb.from('agent_tags').insert(tags.map(tag=>({agent_id:agent.id, tag})));
+  if (result.error) { document.getElementById('add-error').innerHTML = '<div class="error-msg">' + result.error.message + '</div>'; return; }
+  var tags = document.getElementById('a-tags').value.split(',').map(function(t) { return t.trim(); }).filter(Boolean);
+  if (tags.length) {
+    await sb.from('agent_tags').insert(tags.map(function(tag) { return { agent_id: result.data.id, tag: tag }; }));
+  }
   toast('Agent saved');
   navigate('agents');
 }
 
 function screenAddClient() {
-  return `
-  <div class="header"><h1>New client</h1></div>
-  <div class="content">
-    <span class="back-btn" onclick="navigate('clients')">← Cancel</span>
-    <div id="add-error"></div>
-    <div class="card">
-      <div class="input-group"><label>Full name *</label><input id="c-name" placeholder="James Holbrook"/></div>
-      <div class="input-group"><label>Phone</label><input id="c-phone" type="tel" inputmode="tel" placeholder="(555) 000-0000" oninput="fmtPhone(this)"/></div>
-      <div class="input-group"><label>Email</label><input id="c-email" type="email" placeholder="client@email.com"/></div>
-      <div class="input-group"><label>Budget min</label><input id="c-bmin" type="text" inputmode="numeric" placeholder="$400,000" oninput="fmtDollar(this)"/></div>
-      <div class="input-group"><label>Budget max</label><input id="c-bmax" type="text" inputmode="numeric" placeholder="$500,000" oninput="fmtDollar(this)"/></div>
-      <div class="input-group"><label>Notes</label><textarea id="c-notes" placeholder="Initial impressions…"></textarea></div>
-    </div>
-    <button class="btn btn-primary" onclick="saveClient()">Save client</button>
-  </div>`;
-}
-
-function fmtPhone(el) {
-  let v = el.value.replace(/\D/g,'').slice(0,10);
-  if (v.length >= 7) v = '('+v.slice(0,3)+') '+v.slice(3,6)+'-'+v.slice(6);
-  else if (v.length >= 4) v = '('+v.slice(0,3)+') '+v.slice(3);
-  else if (v.length > 0) v = '('+v;
-  el.value = v;
-}
-
-function fmtDollar(el) {
-  const raw = el.value.replace(/[^0-9]/g, '');
-  el.value = raw ? '$' + Number(raw).toLocaleString('en-US') : '';
-}
-
-function screenAddVisit(clientId) {
-  return `
-  <div class="header"><h1>Log visit</h1></div>
-  <div class="content">
-    <span class="back-btn" onclick="navigate('client-detail','${clientId}')">← Cancel</span>
-    <div id="add-error"></div>
-    <div class="card">
-      <div class="input-group"><label>Address *</label><input id="v-addr" placeholder="142 Maple St"/></div>
-      <div class="input-group"><label>Date</label><input id="v-date" type="date" value="${new Date().toISOString().split('T')[0]}"/></div>
-      <div class="input-group"><label>Outcome</label>
-        <select id="v-outcome"><option>Interested</option><option>Passed</option><option>Made offer</option><option>Undecided</option></select>
-      </div>
-      <div class="input-group"><label>Notes</label><textarea id="v-notes" placeholder="Observations from the visit…"></textarea></div>
-    </div>
-    <button class="btn btn-primary" onclick="saveVisit('${clientId}')">Save visit</button>
-  </div>`;
-}
-
-async function saveVisit(clientId) {
-  const addr = document.getElementById('v-addr').value.trim();
-  if (!addr) { document.getElementById('add-error').innerHTML='<div class="error-msg">Address is required</div>'; return; }
-  const {error} = await sb.from('visits').insert({
-    client_id: clientId,
-    user_id: currentUser.id,
-    address: addr,
-    visit_date: document.getElementById('v-date').value,
-    outcome: document.getElementById('v-outcome').value,
-    notes: document.getElementById('v-notes').value.trim()||null
-  });
-  if (error) { document.getElementById('add-error').innerHTML=`<div class="error-msg">${error.message}</div>`; return; }
-  await sb.rpc('evaluate_client_flag',{p_client_id:clientId});
-  toast('Visit logged');
-  navigate('client-detail', clientId);
-}
-
-function screenAddOffer(clientId) {
-  return `
-  <div class="header"><h1>Log offer</h1></div>
-  <div class="content">
-    <span class="back-btn" onclick="navigate('client-detail','${clientId}')">← Cancel</span>
-    <div id="add-error"></div>
-    <div class="card">
-      <div class="input-group"><label>Property address *</label><input id="o-addr" placeholder="88 Birch Ave"/></div>
-      <div class="input-group"><label>Amount *</label><input id="o-amt" type="number" placeholder="450000"/></div>
-      <div class="input-group"><label>Direction</label>
-        <select id="o-dir"><option value="sent">Sent (our offer)</option><option value="received">Received (their offer)</option></select>
-      </div>
-      <div class="input-group"><label>Status</label>
-        <select id="o-status"><option>Pending</option><option>Accepted</option><option>Rejected</option><option>Countered</option><option>Withdrawn</option></select>
-      </div>
-      <div class="input-group"><label>Date</label><input id="o-date" type="date" value="${new Date().toISOString().split('T')[0]}"/></div>
-      <div class="input-group"><label>Notes</label><textarea id="o-notes" placeholder="Context on this offer…"></textarea></div>
-    </div>
-    <button class="btn btn-primary" onclick="saveOffer('${clientId}')">Save offer</button>
-  </div>`;
-}
-
-async function saveOffer(clientId) {
-  const addr = document.getElementById('o-addr').value.trim();
-  const amt  = document.getElementById('o-amt').value;
-  if (!addr||!amt) { document.getElementById('add-error').innerHTML='<div class="error-msg">Address and amount are required</div>'; return; }
-  const {data:deal} = await sb.from('deals').insert({
-    user_id: currentUser.id,
-    client_id: clientId,
-    address: addr,
-    stage: 'Active',
-    our_offer: document.getElementById('o-dir').value==='sent'?amt:null,
-    their_offer: document.getElementById('o-dir').value==='received'?amt:null
-  }).select().single();
-  if (!deal) { document.getElementById('add-error').innerHTML='<div class="error-msg">Could not create deal record</div>'; return; }
-  const {error} = await sb.from('offers').insert({
-    deal_id: deal.id,
-    amount: amt,
-    direction: document.getElementById('o-dir').value,
-    status: document.getElementById('o-status').value,
-    offer_date: document.getElementById('o-date').value,
-    notes: document.getElementById('o-notes').value.trim()||null
-  });
-  if (error) { document.getElementById('add-error').innerHTML=`<div class="error-msg">${error.message}</div>`; return; }
-  await sb.rpc('evaluate_client_flag',{p_client_id:clientId});
-  toast('Offer logged');
-  navigate('client-detail', clientId);
-}
-
-// ─── Boot ─────────────────────────────────────────────────────
-(async () => {
-  const {data:{session}} = await sb.auth.getSession();
-  if (session?.user) {
-    currentUser = session.user;
-    const {data} = await sb.from('profiles').select('*').eq('id',session.user.id).single();
-    currentProfile = data;
-    navigate('dashboard');
-  } else {
-    navigate('login');
-  }
-})();
-</script>
-</body>
-</html>
-+Number(raw).toLocaleString('en-US') : '';
-}
-
-function parseDollar(val) {
-  return val ? val.replace(/[^0-9]/g,'') || null : null;
+  return '<div class="header"><h1>New client</h1></div>'
+       + '<div class="content">'
+       + '<span class="back-btn" onclick="navigate(\'clients\')">← Cancel</span>'
+       + '<div id="add-error"></div>'
+       + '<div class="card">'
+       + '<div class="input-group"><label>Full name *</label><input id="c-name" placeholder="James Holbrook"/></div>'
+       + '<div class="input-group"><label>Phone</label><input id="c-phone" type="tel" inputmode="tel" placeholder="(555) 000-0000" oninput="fmtPhone(this)"/></div>'
+       + '<div class="input-group"><label>Email</label><input id="c-email" type="email" placeholder="client@email.com"/></div>'
+       + '<div class="input-group"><label>Budget min</label><input id="c-bmin" type="text" inputmode="numeric" placeholder="$400,000" oninput="fmtDollar(this)"/></div>'
+       + '<div class="input-group"><label>Budget max</label><input id="c-bmax" type="text" inputmode="numeric" placeholder="$500,000" oninput="fmtDollar(this)"/></div>'
+       + '<div class="input-group"><label>Notes</label><textarea id="c-notes" placeholder="Initial impressions..."></textarea></div>'
+       + '</div>'
+       + '<button class="btn btn-primary" onclick="saveClient()">Save client</button>'
+       + '</div>';
 }
 
 async function saveClient() {
-  const name = document.getElementById('c-name').value.trim();
-  if (!name) { document.getElementById('add-error').innerHTML='<div class="error-msg">Name is required</div>'; return; }
-  const allowed = await sb.rpc('check_tier_limit',{p_user_id:currentUser.id, p_table:'clients'});
-  if (!allowed.data) { document.getElementById('add-error').innerHTML='<div class="error-msg">Free tier limit reached (5 clients). Upgrade to add more.</div>'; return; }
-  const {error} = await sb.from('clients').insert({
-    user_id: currentUser.id,
-    full_name: name,
-    phone: document.getElementById('c-phone').value.trim()||null,
-    email: document.getElementById('c-email').value.trim()||null,
-    budget_min: parseDollar(document.getElementById('c-bmin').value)||null,
-    budget_max: parseDollar(document.getElementById('c-bmax').value)||null,
-    notes: document.getElementById('c-notes').value.trim()||null
+  var name = document.getElementById('c-name').value.trim();
+  if (!name) { document.getElementById('add-error').innerHTML = '<div class="error-msg">Name is required</div>'; return; }
+  var allowed = await sb.rpc('check_tier_limit', { p_user_id: currentUser.id, p_table: 'clients' });
+  if (!allowed.data) { document.getElementById('add-error').innerHTML = '<div class="error-msg">Free tier limit reached (5 clients). Upgrade to add more.</div>'; return; }
+  var result = await sb.from('clients').insert({
+    user_id:    currentUser.id,
+    full_name:  name,
+    phone:      document.getElementById('c-phone').value.trim() || null,
+    email:      document.getElementById('c-email').value.trim() || null,
+    budget_min: parseDollar(document.getElementById('c-bmin').value),
+    budget_max: parseDollar(document.getElementById('c-bmax').value),
+    notes:      document.getElementById('c-notes').value.trim() || null
   });
-  if (error) { document.getElementById('add-error').innerHTML=`<div class="error-msg">${error.message}</div>`; return; }
+  if (result.error) { document.getElementById('add-error').innerHTML = '<div class="error-msg">' + result.error.message + '</div>'; return; }
   toast('Client saved');
   navigate('clients');
 }
 
 function screenAddVisit(clientId) {
-  return `
-  <div class="header"><h1>Log visit</h1></div>
-  <div class="content">
-    <span class="back-btn" onclick="navigate('client-detail','${clientId}')">← Cancel</span>
-    <div id="add-error"></div>
-    <div class="card">
-      <div class="input-group"><label>Address *</label><input id="v-addr" placeholder="142 Maple St"/></div>
-      <div class="input-group"><label>Date</label><input id="v-date" type="date" value="${new Date().toISOString().split('T')[0]}"/></div>
-      <div class="input-group"><label>Outcome</label>
-        <select id="v-outcome"><option>Interested</option><option>Passed</option><option>Made offer</option><option>Undecided</option></select>
-      </div>
-      <div class="input-group"><label>Notes</label><textarea id="v-notes" placeholder="Observations from the visit…"></textarea></div>
-    </div>
-    <button class="btn btn-primary" onclick="saveVisit('${clientId}')">Save visit</button>
-  </div>`;
+  var today = new Date().toISOString().split('T')[0];
+  return '<div class="header"><h1>Log visit</h1></div>'
+       + '<div class="content">'
+       + '<span class="back-btn" onclick="navigate(\'client-detail\',\'' + clientId + '\')">← Cancel</span>'
+       + '<div id="add-error"></div>'
+       + '<div class="card">'
+       + '<div class="input-group"><label>Address *</label><input id="v-addr" placeholder="142 Maple St"/></div>'
+       + '<div class="input-group"><label>Date</label><input id="v-date" type="date" value="' + today + '"/></div>'
+       + '<div class="input-group"><label>Outcome</label>'
+       + '<select id="v-outcome"><option>Interested</option><option>Passed</option><option>Made offer</option><option>Undecided</option></select></div>'
+       + '<div class="input-group"><label>Notes</label><textarea id="v-notes" placeholder="Observations from the visit..."></textarea></div>'
+       + '</div>'
+       + '<button class="btn btn-primary" onclick="saveVisit(\'' + clientId + '\')">Save visit</button>'
+       + '</div>';
 }
 
 async function saveVisit(clientId) {
-  const addr = document.getElementById('v-addr').value.trim();
-  if (!addr) { document.getElementById('add-error').innerHTML='<div class="error-msg">Address is required</div>'; return; }
-  const {error} = await sb.from('visits').insert({
-    client_id: clientId,
-    user_id: currentUser.id,
-    address: addr,
+  var addr = document.getElementById('v-addr').value.trim();
+  if (!addr) { document.getElementById('add-error').innerHTML = '<div class="error-msg">Address is required</div>'; return; }
+  var result = await sb.from('visits').insert({
+    client_id:  clientId,
+    user_id:    currentUser.id,
+    address:    addr,
     visit_date: document.getElementById('v-date').value,
-    outcome: document.getElementById('v-outcome').value,
-    notes: document.getElementById('v-notes').value.trim()||null
+    outcome:    document.getElementById('v-outcome').value,
+    notes:      document.getElementById('v-notes').value.trim() || null
   });
-  if (error) { document.getElementById('add-error').innerHTML=`<div class="error-msg">${error.message}</div>`; return; }
-  await sb.rpc('evaluate_client_flag',{p_client_id:clientId});
+  if (result.error) { document.getElementById('add-error').innerHTML = '<div class="error-msg">' + result.error.message + '</div>'; return; }
+  await sb.rpc('evaluate_client_flag', { p_client_id: clientId });
   toast('Visit logged');
   navigate('client-detail', clientId);
 }
 
 function screenAddOffer(clientId) {
-  return `
-  <div class="header"><h1>Log offer</h1></div>
-  <div class="content">
-    <span class="back-btn" onclick="navigate('client-detail','${clientId}')">← Cancel</span>
-    <div id="add-error"></div>
-    <div class="card">
-      <div class="input-group"><label>Property address *</label><input id="o-addr" placeholder="88 Birch Ave"/></div>
-      <div class="input-group"><label>Amount *</label><input id="o-amt" type="number" placeholder="450000"/></div>
-      <div class="input-group"><label>Direction</label>
-        <select id="o-dir"><option value="sent">Sent (our offer)</option><option value="received">Received (their offer)</option></select>
-      </div>
-      <div class="input-group"><label>Status</label>
-        <select id="o-status"><option>Pending</option><option>Accepted</option><option>Rejected</option><option>Countered</option><option>Withdrawn</option></select>
-      </div>
-      <div class="input-group"><label>Date</label><input id="o-date" type="date" value="${new Date().toISOString().split('T')[0]}"/></div>
-      <div class="input-group"><label>Notes</label><textarea id="o-notes" placeholder="Context on this offer…"></textarea></div>
-    </div>
-    <button class="btn btn-primary" onclick="saveOffer('${clientId}')">Save offer</button>
-  </div>`;
+  var today = new Date().toISOString().split('T')[0];
+  return '<div class="header"><h1>Log offer</h1></div>'
+       + '<div class="content">'
+       + '<span class="back-btn" onclick="navigate(\'client-detail\',\'' + clientId + '\')">← Cancel</span>'
+       + '<div id="add-error"></div>'
+       + '<div class="card">'
+       + '<div class="input-group"><label>Property address *</label><input id="o-addr" placeholder="88 Birch Ave"/></div>'
+       + '<div class="input-group"><label>Amount *</label><input id="o-amt" type="text" inputmode="numeric" placeholder="$450,000" oninput="fmtDollar(this)"/></div>'
+       + '<div class="input-group"><label>Direction</label>'
+       + '<select id="o-dir"><option value="sent">Sent (our offer)</option><option value="received">Received (their offer)</option></select></div>'
+       + '<div class="input-group"><label>Status</label>'
+       + '<select id="o-status"><option>Pending</option><option>Accepted</option><option>Rejected</option><option>Countered</option><option>Withdrawn</option></select></div>'
+       + '<div class="input-group"><label>Date</label><input id="o-date" type="date" value="' + today + '"/></div>'
+       + '<div class="input-group"><label>Notes</label><textarea id="o-notes" placeholder="Context on this offer..."></textarea></div>'
+       + '</div>'
+       + '<button class="btn btn-primary" onclick="saveOffer(\'' + clientId + '\')">Save offer</button>'
+       + '</div>';
 }
 
 async function saveOffer(clientId) {
-  const addr = document.getElementById('o-addr').value.trim();
-  const amt  = document.getElementById('o-amt').value;
-  if (!addr||!amt) { document.getElementById('add-error').innerHTML='<div class="error-msg">Address and amount are required</div>'; return; }
-  const {data:deal} = await sb.from('deals').insert({
-    user_id: currentUser.id,
-    client_id: clientId,
-    address: addr,
-    stage: 'Active',
-    our_offer: document.getElementById('o-dir').value==='sent'?amt:null,
-    their_offer: document.getElementById('o-dir').value==='received'?amt:null
+  var addr = document.getElementById('o-addr').value.trim();
+  var amt  = parseDollar(document.getElementById('o-amt').value);
+  if (!addr || !amt) { document.getElementById('add-error').innerHTML = '<div class="error-msg">Address and amount are required</div>'; return; }
+  var dir = document.getElementById('o-dir').value;
+  var dealResult = await sb.from('deals').insert({
+    user_id:    currentUser.id,
+    client_id:  clientId,
+    address:    addr,
+    stage:      'Active',
+    our_offer:   dir === 'sent'     ? amt : null,
+    their_offer: dir === 'received' ? amt : null
   }).select().single();
-  if (!deal) { document.getElementById('add-error').innerHTML='<div class="error-msg">Could not create deal record</div>'; return; }
-  const {error} = await sb.from('offers').insert({
-    deal_id: deal.id,
-    amount: amt,
-    direction: document.getElementById('o-dir').value,
-    status: document.getElementById('o-status').value,
+  if (!dealResult.data) { document.getElementById('add-error').innerHTML = '<div class="error-msg">Could not create deal record</div>'; return; }
+  var offerResult = await sb.from('offers').insert({
+    deal_id:    dealResult.data.id,
+    amount:     amt,
+    direction:  dir,
+    status:     document.getElementById('o-status').value,
     offer_date: document.getElementById('o-date').value,
-    notes: document.getElementById('o-notes').value.trim()||null
+    notes:      document.getElementById('o-notes').value.trim() || null
   });
-  if (error) { document.getElementById('add-error').innerHTML=`<div class="error-msg">${error.message}</div>`; return; }
-  await sb.rpc('evaluate_client_flag',{p_client_id:clientId});
+  if (offerResult.error) { document.getElementById('add-error').innerHTML = '<div class="error-msg">' + offerResult.error.message + '</div>'; return; }
+  await sb.rpc('evaluate_client_flag', { p_client_id: clientId });
   toast('Offer logged');
   navigate('client-detail', clientId);
 }
 
-// ─── Boot ─────────────────────────────────────────────────────
-(async () => {
-  const {data:{session}} = await sb.auth.getSession();
-  if (session?.user) {
+// ── Boot ───────────────────────────────────────────────────────
+(async function() {
+  var sessionResult = await sb.auth.getSession();
+  var session = sessionResult.data.session;
+  if (session && session.user) {
     currentUser = session.user;
-    const {data} = await sb.from('profiles').select('*').eq('id',session.user.id).single();
-    currentProfile = data;
+    var profileResult = await sb.from('profiles').select('*').eq('id', session.user.id).single();
+    currentProfile = profileResult.data;
     navigate('dashboard');
   } else {
     navigate('login');
