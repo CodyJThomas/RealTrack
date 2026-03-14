@@ -1,35 +1,36 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>RealTrack</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-*{box-sizing:border-box;margin:0;padding:0;font-family:var(--font-sans,system-ui,sans-serif)}
-body{background:var(--color-background-tertiary,#f5f5f3);display:flex;justify-content:center;align-items:flex-start;min-height:100vh;padding:24px 12px}
-.phone{width:375px;min-height:720px;background:var(--color-background-primary,#fff);border-radius:40px;border:1.5px solid var(--color-border-secondary,rgba(0,0,0,0.15));overflow:hidden;position:relative;display:flex;flex-direction:column}
-.status-bar{background:var(--color-background-primary,#fff);padding:12px 24px 6px;display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:500;color:var(--color-text-secondary)}
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,sans-serif}
+body{background:#f5f5f3;display:flex;justify-content:center;align-items:flex-start;min-height:100vh;padding:24px 12px}
+.phone{width:375px;min-height:720px;background:#fff;border-radius:40px;border:1.5px solid rgba(0,0,0,0.15);overflow:hidden;position:relative;display:flex;flex-direction:column}
+.status-bar{background:#fff;padding:12px 24px 6px;display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:500;color:#888}
 .screen{flex:1;overflow-y:auto;display:flex;flex-direction:column}
-.nav-bar{background:var(--color-background-primary,#fff);border-top:0.5px solid var(--color-border-tertiary,rgba(0,0,0,0.1));display:flex;justify-content:space-around;padding:10px 0 16px}
-.nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px 12px;border-radius:8px;transition:background 0.15s}
-.nav-item:hover{background:var(--color-background-secondary)}
-.nav-icon{width:22px;height:22px;display:flex;align-items:center;justify-content:center}
-.nav-label{font-size:10px;color:var(--color-text-secondary)}
+.nav-bar{background:#fff;border-top:0.5px solid rgba(0,0,0,0.1);display:flex;justify-content:space-around;padding:10px 0 16px}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px 12px;border-radius:8px}
+.nav-label{font-size:10px;color:#888}
 .nav-item.active .nav-label{color:#185FA5;font-weight:500}
-.nav-item.active .nav-dot{background:#185FA5}
 .nav-dot{width:22px;height:3px;border-radius:2px;background:transparent}
-.header{padding:20px 20px 12px;border-bottom:0.5px solid var(--color-border-tertiary)}
-.header h1{font-size:22px;font-weight:500;color:var(--color-text-primary)}
-.header p{font-size:13px;color:var(--color-text-secondary);margin-top:2px}
+.nav-item.active .nav-dot{background:#185FA5}
+.header{padding:20px 20px 12px;border-bottom:0.5px solid rgba(0,0,0,0.08)}
+.header h1{font-size:22px;font-weight:500;color:#111}
+.header p{font-size:13px;color:#888;margin-top:2px}
 .content{padding:16px;flex:1;display:flex;flex-direction:column;gap:12px}
-.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:14px;padding:14px 16px}
+.card{background:#fff;border:0.5px solid rgba(0,0,0,0.1);border-radius:14px;padding:14px 16px}
 .metric-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.metric{background:var(--color-background-secondary);border-radius:10px;padding:12px}
-.metric-label{font-size:12px;color:var(--color-text-secondary);margin-bottom:4px}
-.metric-value{font-size:22px;font-weight:500;color:var(--color-text-primary)}
+.metric{background:#f5f5f3;border-radius:10px;padding:12px}
+.metric-label{font-size:12px;color:#888;margin-bottom:4px}
+.metric-value{font-size:22px;font-weight:500;color:#111}
 .metric-value.warn{color:#BA7517}
 .metric-value.danger{color:#A32D2D}
 .metric-value.good{color:#3B6D11}
-.section-label{font-size:12px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px}
-.list-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:0.5px solid var(--color-border-tertiary);cursor:pointer}
+.section-label{font-size:12px;font-weight:500;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px}
+.list-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:0.5px solid rgba(0,0,0,0.07);cursor:pointer}
 .list-item:last-child{border-bottom:none}
 .avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;flex-shrink:0}
 .av-blue{background:#E6F1FB;color:#0C447C}
@@ -38,10 +39,9 @@ body{background:var(--color-background-tertiary,#f5f5f3);display:flex;justify-co
 .av-red{background:#FCEBEB;color:#791F1F}
 .av-purple{background:#EEEDFE;color:#3C3489}
 .item-info{flex:1;min-width:0}
-.item-name{font-size:14px;font-weight:500;color:var(--color-text-primary)}
-.item-sub{font-size:12px;color:var(--color-text-secondary);margin-top:2px}
+.item-name{font-size:14px;font-weight:500;color:#111}
+.item-sub{font-size:12px;color:#888;margin-top:2px}
 .item-right{text-align:right;flex-shrink:0}
-.item-val{font-size:13px;font-weight:500;color:var(--color-text-primary)}
 .item-badge{font-size:11px;padding:2px 8px;border-radius:6px;margin-top:3px;display:inline-block}
 .badge-green{background:#EAF3DE;color:#27500A}
 .badge-red{background:#FCEBEB;color:#791F1F}
@@ -50,346 +50,584 @@ body{background:var(--color-background-tertiary,#f5f5f3);display:flex;justify-co
 .badge-gray{background:#F1EFE8;color:#444441}
 .stars{color:#EF9F27;font-size:12px;letter-spacing:1px}
 .tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:6px;background:#F1EFE8;color:#444441;margin:2px 2px 0 0}
-.tag.blue{background:#E6F1FB;color:#185FA5}
-.tag.teal{background:#E1F5EE;color:#0F6E56}
-.tag.red{background:#FCEBEB;color:#A32D2D}
-.btn{display:block;width:100%;padding:13px;border-radius:12px;border:none;font-size:15px;font-weight:500;cursor:pointer;text-align:center;transition:opacity 0.15s}
-.btn:hover{opacity:0.85}
-.btn-primary{background:#185FA5;color:#fff}
-.btn-outline{background:transparent;border:0.5px solid var(--color-border-secondary);color:var(--color-text-primary)}
+.btn{display:block;width:100%;padding:13px;border-radius:12px;border:0.5px solid rgba(0,0,0,0.15);font-size:15px;font-weight:500;cursor:pointer;text-align:center;background:transparent;color:#111}
+.btn-primary{background:#185FA5;color:#fff;border:none}
+.btn-danger{background:transparent;border:0.5px solid #A32D2D;color:#A32D2D}
 .input-group{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
-.input-group label{font-size:13px;color:var(--color-text-secondary)}
-.input-group input,.input-group select,.input-group textarea{padding:10px 12px;border-radius:10px;border:0.5px solid var(--color-border-secondary);font-size:14px;background:var(--color-background-primary);color:var(--color-text-primary);width:100%}
+.input-group label{font-size:13px;color:#888}
+.input-group input,.input-group select,.input-group textarea{padding:10px 12px;border-radius:10px;border:0.5px solid rgba(0,0,0,0.15);font-size:14px;background:#fff;color:#111;width:100%}
 .input-group textarea{resize:none;height:70px}
-.flag-banner{background:#FAEEDA;border:0.5px solid #FAC775;border-radius:10px;padding:10px 14px;display:flex;gap:10px;align-items:flex-start}
-.flag-icon{font-size:16px;flex-shrink:0}
-.flag-text{font-size:12px;color:#633806;line-height:1.5}
-.retainer-badge{background:#FCEBEB;border:0.5px solid #F7C1C1;border-radius:10px;padding:10px 14px;display:flex;gap:10px;align-items:center}
-.retainer-text{font-size:12px;color:#791F1F;font-weight:500}
-.deal-stage{display:flex;align-items:center;gap:6px;margin-top:8px}
-.stage-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.flag-banner{background:#FAEEDA;border:0.5px solid #FAC775;border-radius:10px;padding:10px 14px;font-size:12px;color:#633806;line-height:1.5}
+.retainer-badge{background:#FCEBEB;border:0.5px solid #F7C1C1;border-radius:10px;padding:10px 14px;font-size:12px;color:#791F1F;font-weight:500}
+.free-tier{background:#E6F1FB;border-radius:10px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center}
+.free-tier-label{font-size:12px;color:#0C447C}
+.upgrade-btn{font-size:12px;background:#185FA5;color:#fff;padding:4px 12px;border-radius:6px;border:none;cursor:pointer;font-weight:500}
+.back-btn{font-size:13px;color:#185FA5;cursor:pointer;padding:4px 0;display:inline-block}
+.detail-hero{background:#f5f5f3;padding:20px;display:flex;align-items:center;gap:14px;border-bottom:0.5px solid rgba(0,0,0,0.08)}
+.deal-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:0.5px solid rgba(0,0,0,0.07);font-size:13px}
+.deal-row:last-child{border-bottom:none}
+.progress-bar{height:4px;background:#f0f0ee;border-radius:2px;overflow:hidden;margin-top:6px}
+.progress-fill{height:100%;border-radius:2px}
+.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:10px 20px;border-radius:10px;font-size:13px;z-index:999;opacity:0;transition:opacity 0.3s;pointer-events:none}
+.toast.show{opacity:1}
+.loading{padding:40px;text-align:center;color:#888;font-size:14px}
+.error-msg{background:#FCEBEB;color:#791F1F;border-radius:10px;padding:10px 14px;font-size:13px;margin-bottom:8px}
+.login-wrap{padding:32px 24px;display:flex;flex-direction:column;gap:16px;flex:1;justify-content:center}
+.login-logo{font-size:28px;font-weight:500;color:#185FA5;margin-bottom:8px;text-align:center}
+.login-sub{font-size:14px;color:#888;text-align:center;margin-bottom:8px}
+.stage-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;display:inline-block;margin-right:4px}
 .stage-active{background:#185FA5}
 .stage-contract{background:#3B6D11}
 .stage-closed{background:#3B6D11}
 .stage-fallen{background:#A32D2D}
 .stage-pending{background:#BA7517}
-.stage-label{font-size:12px;color:var(--color-text-secondary)}
-.login-wrap{padding:32px 24px;display:flex;flex-direction:column;gap:16px;flex:1;justify-content:center}
-.login-logo{font-size:28px;font-weight:500;color:#185FA5;margin-bottom:8px;text-align:center}
-.login-sub{font-size:14px;color:var(--color-text-secondary);text-align:center;margin-bottom:8px}
-.divider{text-align:center;font-size:12px;color:var(--color-text-tertiary);margin:4px 0}
-.progress-bar{height:4px;background:var(--color-background-secondary);border-radius:2px;overflow:hidden;margin-top:6px}
-.progress-fill{height:100%;border-radius:2px;background:#185FA5;transition:width 0.3s}
-.free-tier{background:#E6F1FB;border-radius:10px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center}
-.free-tier-label{font-size:12px;color:#0C447C}
-.upgrade-btn{font-size:12px;background:#185FA5;color:#fff;padding:4px 12px;border-radius:6px;border:none;cursor:pointer;font-weight:500}
-.back-btn{font-size:13px;color:#185FA5;cursor:pointer;padding:4px 0;display:inline-block}
-.detail-hero{background:var(--color-background-secondary);padding:20px;display:flex;align-items:center;gap:14px;border-bottom:0.5px solid var(--color-border-tertiary)}
-.detail-avatar{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:500}
-.deal-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:0.5px solid var(--color-border-tertiary);font-size:13px}
-.deal-row:last-child{border-bottom:none}
 </style>
 </head>
 <body>
+
+<div id="toast" class="toast"></div>
+
 <div class="phone" id="app">
-  <div class="status-bar"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
-  <div class="screen" id="screen"></div>
+  <div class="status-bar"><span id="clock">9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+  <div class="screen" id="screen"><div class="loading">Loading...</div></div>
   <div class="nav-bar" id="nav" style="display:none">
     <div class="nav-item" onclick="navigate('dashboard')" id="nav-dashboard">
       <div class="nav-dot"></div>
-      <div class="nav-icon">
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="7" height="7" rx="2" fill="currentColor" opacity="0.7"/><rect x="11" y="2" width="7" height="7" rx="2" fill="currentColor" opacity="0.7"/><rect x="2" y="11" width="7" height="7" rx="2" fill="currentColor" opacity="0.7"/><rect x="11" y="11" width="7" height="7" rx="2" fill="currentColor" opacity="0.7"/></svg>
-      </div>
+      <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="7" height="7" rx="2" fill="currentColor" opacity="0.7"/><rect x="11" y="2" width="7" height="7" rx="2" fill="currentColor" opacity="0.7"/><rect x="2" y="11" width="7" height="7" rx="2" fill="currentColor" opacity="0.7"/><rect x="11" y="11" width="7" height="7" rx="2" fill="currentColor" opacity="0.7"/></svg>
       <span class="nav-label">Dashboard</span>
     </div>
     <div class="nav-item" onclick="navigate('agents')" id="nav-agents">
       <div class="nav-dot"></div>
-      <div class="nav-icon">
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7" r="3.5" stroke="currentColor" stroke-width="1.5"/><path d="M3 17c0-3.866 3.134-7 7-7s7 3.134 7 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-      </div>
+      <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7" r="3.5" stroke="currentColor" stroke-width="1.5"/><path d="M3 17c0-3.866 3.134-7 7-7s7 3.134 7 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
       <span class="nav-label">Agents</span>
     </div>
     <div class="nav-item" onclick="navigate('clients')" id="nav-clients">
       <div class="nav-dot"></div>
-      <div class="nav-icon">
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="7" cy="7" r="3" stroke="currentColor" stroke-width="1.5"/><circle cx="14" cy="8" r="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M1 17c0-3 2.686-5.5 6-5.5s6 2.5 6 5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M14.5 12.5c1.933 0 3.5 1.343 3.5 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-      </div>
+      <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><circle cx="7" cy="7" r="3" stroke="currentColor" stroke-width="1.5"/><circle cx="14" cy="8" r="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M1 17c0-3 2.686-5.5 6-5.5s6 2.5 6 5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M14.5 12.5c1.933 0 3.5 1.343 3.5 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
       <span class="nav-label">Clients</span>
     </div>
     <div class="nav-item" onclick="navigate('add')" id="nav-add">
       <div class="nav-dot"></div>
-      <div class="nav-icon">
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5"/><path d="M10 7v6M7 10h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-      </div>
+      <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5"/><path d="M10 7v6M7 10h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
       <span class="nav-label">Add</span>
     </div>
   </div>
 </div>
 
 <script>
-const screens = {};
-let currentScreen = 'login';
+// ─── Supabase init ───────────────────────────────────────────
+const SUPA_URL  = 'https://bylkcfoqoehkgiiqscvl.supabase.co';
+const SUPA_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ5bGtjZm9xb2Voa2dpaXFzY3ZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0NTA5NDgsImV4cCI6MjA4OTAyNjk0OH0.nrCbebrNNg-bT1fes67ogCXHxhWfWkDa591db1MVsJo';
+const sb = supabase.createClient(SUPA_URL, SUPA_ANON);
 
-function navigate(name, data) {
-  currentScreen = name;
+// ─── State ───────────────────────────────────────────────────
+let currentUser = null;
+let currentProfile = null;
+
+// ─── Clock ───────────────────────────────────────────────────
+function updateClock() {
+  const n = new Date();
+  document.getElementById('clock').textContent =
+    n.getHours().toString().padStart(2,'0') + ':' +
+    n.getMinutes().toString().padStart(2,'0');
+}
+updateClock();
+setInterval(updateClock, 10000);
+
+// ─── Toast ───────────────────────────────────────────────────
+function toast(msg, dur=2500) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), dur);
+}
+
+// ─── Navigation ──────────────────────────────────────────────
+const noNavScreens = ['login','agent-detail','client-detail','add-agent','add-client','add-visit','add-offer'];
+
+async function navigate(name, data) {
+  document.getElementById('nav').style.display = noNavScreens.includes(name) ? 'none' : 'flex';
   document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
   const navEl = document.getElementById('nav-' + name);
   if (navEl) navEl.classList.add('active');
-  document.getElementById('nav').style.display = ['login','agent-detail','client-detail','add-agent','add-client'].includes(name) ? 'none' : 'flex';
-  document.getElementById('screen').innerHTML = screens[name](data);
+  document.getElementById('screen').innerHTML = '<div class="loading">Loading...</div>';
+  await renderScreen(name, data);
 }
 
-screens.login = () => `
+// ─── Avatar helpers ──────────────────────────────────────────
+function initials(name) {
+  return (name||'?').split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+}
+const avColors = ['av-blue','av-teal','av-amber','av-purple','av-red'];
+function avColor(str) { return avColors[(str||'').charCodeAt(0) % avColors.length]; }
+
+function categoryBadge(cat) {
+  const map = {Preferred:'green',Reliable:'blue',Neutral:'gray',Difficult:'amber',Avoid:'red'};
+  return `<span class="item-badge badge-${map[cat]||'gray'}">${cat}</span>`;
+}
+function stageColor(stage) {
+  const map = {'Active':'stage-active','Under Contract':'stage-contract','Closed':'stage-closed','Fallen Through':'stage-fallen','Pending':'stage-pending'};
+  return map[stage]||'stage-active';
+}
+function starStr(r) { return '★'.repeat(r)+'☆'.repeat(5-r); }
+function fmt(n) { return n ? '$'+Number(n).toLocaleString() : '—'; }
+
+// ─── Screen renderer ─────────────────────────────────────────
+async function renderScreen(name, data) {
+  const scr = document.getElementById('screen');
+  switch(name) {
+    case 'login':      scr.innerHTML = screenLogin(); break;
+    case 'dashboard':  scr.innerHTML = await screenDashboard(); break;
+    case 'agents':     scr.innerHTML = await screenAgents(); break;
+    case 'agent-detail': scr.innerHTML = await screenAgentDetail(data); break;
+    case 'clients':    scr.innerHTML = await screenClients(); break;
+    case 'client-detail': scr.innerHTML = await screenClientDetail(data); break;
+    case 'add':        scr.innerHTML = screenAdd(); break;
+    case 'add-agent':  scr.innerHTML = screenAddAgent(); break;
+    case 'add-client': scr.innerHTML = screenAddClient(); break;
+    case 'add-visit':  scr.innerHTML = screenAddVisit(data); break;
+    case 'add-offer':  scr.innerHTML = screenAddOffer(data); break;
+  }
+}
+
+// ─── LOGIN ───────────────────────────────────────────────────
+function screenLogin() {
+  return `
   <div class="login-wrap">
     <div>
       <div class="login-logo">RealTrack</div>
       <div class="login-sub">Smart CRM for realtors</div>
     </div>
-    <div class="input-group"><label>Email</label><input type="email" placeholder="you@email.com" value="demo@realtrack.app"/></div>
-    <div class="input-group"><label>Password</label><input type="password" placeholder="••••••••" value="demo1234"/></div>
-    <button class="btn btn-primary" onclick="navigate('dashboard')">Sign in</button>
-    <div class="divider">— or —</div>
-    <button class="btn btn-outline">Create account</button>
-    <div style="text-align:center;font-size:12px;color:var(--color-text-tertiary);margin-top:8px">Free tier: 5 agents + 5 clients</div>
-  </div>
-`;
+    <div id="login-error"></div>
+    <div class="input-group"><label>Email</label><input id="l-email" type="email" placeholder="you@email.com"/></div>
+    <div class="input-group"><label>Password</label><input id="l-pass" type="password" placeholder="••••••••"/></div>
+    <button class="btn btn-primary" onclick="doLogin()">Sign in</button>
+    <button class="btn" onclick="doSignup()">Create account</button>
+    <div style="text-align:center;font-size:12px;color:#aaa;margin-top:8px">Free tier: 5 agents + 5 clients</div>
+  </div>`;
+}
 
-screens.dashboard = () => `
-  <div class="header"><h1>Good morning, Marcus</h1><p>Here's your activity snapshot</p></div>
+async function doLogin() {
+  const email = document.getElementById('l-email').value.trim();
+  const pass  = document.getElementById('l-pass').value;
+  const {data, error} = await sb.auth.signInWithPassword({email, password:pass});
+  if (error) {
+    document.getElementById('login-error').innerHTML = `<div class="error-msg">${error.message}</div>`;
+    return;
+  }
+  await afterAuth(data.user);
+}
+
+async function doSignup() {
+  const email = document.getElementById('l-email').value.trim();
+  const pass  = document.getElementById('l-pass').value;
+  const {data, error} = await sb.auth.signUp({email, password:pass});
+  if (error) {
+    document.getElementById('login-error').innerHTML = `<div class="error-msg">${error.message}</div>`;
+    return;
+  }
+  if (data.user) {
+    await sb.from('profiles').upsert({id:data.user.id, email, tier:'free'});
+    toast('Account created! Check email to confirm.');
+    await afterAuth(data.user);
+  }
+}
+
+async function afterAuth(user) {
+  currentUser = user;
+  const {data} = await sb.from('profiles').select('*').eq('id', user.id).single();
+  currentProfile = data;
+  navigate('dashboard');
+}
+
+async function doLogout() {
+  await sb.auth.signOut();
+  currentUser = null; currentProfile = null;
+  document.getElementById('nav').style.display = 'none';
+  navigate('login');
+}
+
+// ─── DASHBOARD ───────────────────────────────────────────────
+async function screenDashboard() {
+  const uid = currentUser.id;
+  const [{data:agents},{data:clients},{data:deals},{data:visits}] = await Promise.all([
+    sb.from('agents').select('id').eq('user_id',uid),
+    sb.from('clients').select('id,flag_reason,retainer_required,full_name').eq('user_id',uid),
+    sb.from('deals').select('id,stage').eq('user_id',uid),
+    sb.from('visits').select('id,created_at').eq('user_id',uid)
+  ]);
+  const now = new Date();
+  const thisMonth = (visits||[]).filter(v => new Date(v.created_at).getMonth()===now.getMonth()).length;
+  const activeDeals = (deals||[]).filter(d=>d.stage==='Active'||d.stage==='Under Contract').length;
+  const closedDeals = (deals||[]).filter(d=>d.stage==='Closed').length;
+  const flagged = (clients||[]).filter(c=>c.flag_reason);
+  const tier = currentProfile?.tier||'free';
+  const agentCount = (agents||[]).length;
+  const clientCount = (clients||[]).length;
+
+  const recentClients = flagged.slice(0,3);
+
+  return `
+  <div class="header"><h1>Dashboard</h1><p>${currentUser.email}</p></div>
   <div class="content">
-    <div class="free-tier">
-      <span class="free-tier-label">Free tier — 3/5 agents, 4/5 clients used</span>
-      <button class="upgrade-btn">Upgrade</button>
-    </div>
+    ${tier==='free'?`<div class="free-tier"><span class="free-tier-label">Free — ${agentCount}/5 agents, ${clientCount}/5 clients</span><button class="upgrade-btn" onclick="toast('Stripe coming soon!')">Upgrade</button></div>`:''}
     <div class="metric-grid">
-      <div class="metric"><div class="metric-label">Active deals</div><div class="metric-value">4</div></div>
-      <div class="metric"><div class="metric-label">Visits this month</div><div class="metric-value warn">7</div></div>
-      <div class="metric"><div class="metric-label">Flagged clients</div><div class="metric-value danger">2</div></div>
-      <div class="metric"><div class="metric-label">Closed (YTD)</div><div class="metric-value good">3</div></div>
+      <div class="metric"><div class="metric-label">Active deals</div><div class="metric-value">${activeDeals}</div></div>
+      <div class="metric"><div class="metric-label">Visits this month</div><div class="metric-value warn">${thisMonth}</div></div>
+      <div class="metric"><div class="metric-label">Flagged clients</div><div class="metric-value danger">${flagged.length}</div></div>
+      <div class="metric"><div class="metric-label">Closed (all time)</div><div class="metric-value good">${closedDeals}</div></div>
     </div>
-    <div class="card">
-      <div class="section-label">Recent agent interactions</div>
-      <div class="list-item" onclick="navigate('agent-detail',{name:'Sandra Lee',brokerage:'Compass',rating:4,category:'Preferred',tags:['fast responder','fair offers'],notes:'Always comes prepared. Good communication on counter-offers.',deals:[{addr:'142 Maple St',offer:'$485,000',stage:'Closed',color:'stage-closed'},{addr:'88 Birch Ave',offer:'$512,000',stage:'Under contract',color:'stage-contract'}]})">
-        <div class="avatar av-blue">SL</div>
-        <div class="item-info"><div class="item-name">Sandra Lee</div><div class="item-sub">Compass · 2 deals</div></div>
-        <div class="item-right"><div class="stars">★★★★☆</div><div class="item-badge badge-green">Preferred</div></div>
-      </div>
-      <div class="list-item" onclick="navigate('agent-detail',{name:'Tom Briggs',brokerage:'Century 21',rating:2,category:'Difficult',tags:['slow replies','low-balls'],notes:'Tends to submit well below ask. Slow to respond to counters.',deals:[{addr:'310 Oak Dr',offer:'$398,000',stage:'Fallen through',color:'stage-fallen'},{addr:'21 Elm Ct',offer:'$430,000',stage:'Active',color:'stage-active'}]})">
-        <div class="avatar av-amber">TB</div>
-        <div class="item-info"><div class="item-name">Tom Briggs</div><div class="item-sub">Century 21 · 2 deals</div></div>
-        <div class="item-right"><div class="stars">★★☆☆☆</div><div class="item-badge badge-red">Difficult</div></div>
-      </div>
-    </div>
+    ${flagged.length>0?`
     <div class="card">
       <div class="section-label">Flagged clients</div>
-      <div class="list-item" onclick="navigate('client-detail',{name:'Robert Chen',visits:9,offers:2,offerAmts:['$310K','$295K'],flag:'High visits, low offers',retainer:true,notes:'Has visited 9 properties in 3 months. Both offers were significantly below market value.'})">
-        <div class="avatar av-red">RC</div>
-        <div class="item-info"><div class="item-name">Robert Chen</div><div class="item-sub">9 visits · 2 offers</div></div>
-        <div class="item-right"><div class="item-badge badge-red">Retainer req.</div></div>
-      </div>
-      <div class="list-item" onclick="navigate('client-detail',{name:'Amy Solis',visits:6,offers:3,offerAmts:['$520K','$505K','$498K'],flag:'Unrealistic offers',retainer:false,notes:'Offers consistently 15-20% below list price. Has rejected 2 counteroffers.'})">
-        <div class="avatar av-amber">AS</div>
-        <div class="item-info"><div class="item-name">Amy Solis</div><div class="item-sub">6 visits · 3 offers</div></div>
-        <div class="item-right"><div class="item-badge badge-amber">Flagged</div></div>
-      </div>
-    </div>
-  </div>
-`;
+      ${recentClients.map(c=>`
+      <div class="list-item" onclick="navigate('client-detail','${c.id}')">
+        <div class="avatar ${avColor(c.full_name)}">${initials(c.full_name)}</div>
+        <div class="item-info"><div class="item-name">${c.full_name}</div><div class="item-sub">${c.flag_reason}</div></div>
+        <div class="item-right">${c.retainer_required?'<span class="item-badge badge-red">Retainer req.</span>':'<span class="item-badge badge-amber">Flagged</span>'}</div>
+      </div>`).join('')}
+    </div>`:''}
+    <button class="btn" onclick="doLogout()" style="margin-top:8px;color:#888;font-size:13px;border:none">Sign out</button>
+  </div>`;
+}
 
-screens.agents = () => `
-  <div class="header"><h1>Agents</h1><p>3 agents tracked</p></div>
+// ─── AGENTS ──────────────────────────────────────────────────
+async function screenAgents() {
+  const {data:agents, error} = await sb.from('agents').select('*').eq('user_id',currentUser.id).order('full_name');
+  if (error) return `<div class="content"><div class="error-msg">${error.message}</div></div>`;
+  if (!agents.length) return `<div class="header"><h1>Agents</h1><p>No agents yet</p></div><div class="content"><button class="btn btn-primary" onclick="navigate('add-agent')">+ Add your first agent</button></div>`;
+  return `
+  <div class="header"><h1>Agents</h1><p>${agents.length} tracked</p></div>
   <div class="content">
     <div class="card">
-      <div class="list-item" onclick="navigate('agent-detail',{name:'Sandra Lee',brokerage:'Compass',rating:4,category:'Preferred',tags:['fast responder','fair offers'],notes:'Always comes prepared. Good communication on counter-offers.',deals:[{addr:'142 Maple St',offer:'$485,000',stage:'Closed',color:'stage-closed'},{addr:'88 Birch Ave',offer:'$512,000',stage:'Under contract',color:'stage-contract'}]})">
-        <div class="avatar av-blue">SL</div>
-        <div class="item-info"><div class="item-name">Sandra Lee</div><div class="item-sub">Compass</div></div>
-        <div class="item-right"><div class="stars">★★★★☆</div><div class="item-badge badge-green">Preferred</div></div>
-      </div>
-      <div class="list-item" onclick="navigate('agent-detail',{name:'Tom Briggs',brokerage:'Century 21',rating:2,category:'Difficult',tags:['slow replies','low-balls'],notes:'Tends to submit well below ask. Slow to respond to counters.',deals:[{addr:'310 Oak Dr',offer:'$398,000',stage:'Fallen through',color:'stage-fallen'},{addr:'21 Elm Ct',offer:'$430,000',stage:'Active',color:'stage-active'}]})">
-        <div class="avatar av-amber">TB</div>
-        <div class="item-info"><div class="item-name">Tom Briggs</div><div class="item-sub">Century 21</div></div>
-        <div class="item-right"><div class="stars">★★☆☆☆</div><div class="item-badge badge-red">Difficult</div></div>
-      </div>
-      <div class="list-item" onclick="navigate('agent-detail',{name:'Maria Vega',brokerage:'Keller Williams',rating:5,category:'Reliable',tags:['great communicator','quick close'],notes:'Extremely professional. Deals close on time consistently.',deals:[{addr:'77 Pine Ln',offer:'$610,000',stage:'Closed',color:'stage-closed'}]})">
-        <div class="avatar av-teal">MV</div>
-        <div class="item-info"><div class="item-name">Maria Vega</div><div class="item-sub">Keller Williams</div></div>
-        <div class="item-right"><div class="stars">★★★★★</div><div class="item-badge badge-blue">Reliable</div></div>
-      </div>
+      ${agents.map(a=>`
+      <div class="list-item" onclick="navigate('agent-detail','${a.id}')">
+        <div class="avatar ${avColor(a.full_name)}">${initials(a.full_name)}</div>
+        <div class="item-info"><div class="item-name">${a.full_name}</div><div class="item-sub">${a.brokerage||'—'}</div></div>
+        <div class="item-right"><div class="stars">${starStr(a.rating)}</div>${categoryBadge(a.category)}</div>
+      </div>`).join('')}
     </div>
-    <button class="btn btn-outline" onclick="navigate('add-agent')">+ Add agent</button>
-  </div>
-`;
+    <button class="btn" onclick="navigate('add-agent')">+ Add agent</button>
+  </div>`;
+}
 
-screens['agent-detail'] = (d) => `
+async function screenAgentDetail(agentId) {
+  const [{data:agent},{data:tags},{data:deals}] = await Promise.all([
+    sb.from('agents').select('*').eq('id',agentId).single(),
+    sb.from('agent_tags').select('tag').eq('agent_id',agentId),
+    sb.from('deals').select('*').eq('agent_id',agentId).order('created_at',{ascending:false})
+  ]);
+  if (!agent) return `<div class="content"><div class="error-msg">Agent not found</div></div>`;
+  return `
   <div class="detail-hero">
-    <div class="detail-avatar av-blue" style="width:52px;height:52px;border-radius:50%;background:#E6F1FB;color:#0C447C;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:500">${d.name.split(' ').map(n=>n[0]).join('')}</div>
+    <div class="avatar ${avColor(agent.full_name)}" style="width:52px;height:52px;font-size:16px">${initials(agent.full_name)}</div>
     <div>
-      <div style="font-size:17px;font-weight:500;color:var(--color-text-primary)">${d.name}</div>
-      <div style="font-size:13px;color:var(--color-text-secondary)">${d.brokerage}</div>
-      <div class="stars" style="margin-top:4px">${'★'.repeat(d.rating)}${'☆'.repeat(5-d.rating)}</div>
+      <div style="font-size:17px;font-weight:500">${agent.full_name}</div>
+      <div style="font-size:13px;color:#888">${agent.brokerage||'—'}</div>
+      <div class="stars" style="margin-top:4px">${starStr(agent.rating)}</div>
     </div>
   </div>
   <div class="content">
-    <span class="back-btn" onclick="navigate('agents')">← Back to agents</span>
+    <span class="back-btn" onclick="navigate('agents')">← Back</span>
     <div class="card">
       <div class="section-label">Category & tags</div>
-      <div class="item-badge badge-${d.category==='Preferred'?'green':d.category==='Difficult'?'red':'blue'}" style="margin-bottom:8px">${d.category}</div>
-      <div>${d.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+      ${categoryBadge(agent.category)}
+      <div style="margin-top:8px">${(tags||[]).map(t=>`<span class="tag">${t.tag}</span>`).join('')||'<span style="font-size:12px;color:#aaa">No tags</span>'}</div>
     </div>
+    ${agent.notes?`<div class="card"><div class="section-label">Notes</div><div style="font-size:13px;line-height:1.6">${agent.notes}</div></div>`:''}
     <div class="card">
-      <div class="section-label">Notes</div>
-      <div style="font-size:13px;color:var(--color-text-primary);line-height:1.6">${d.notes}</div>
+      <div class="section-label">Deal history (${(deals||[]).length})</div>
+      ${(deals||[]).length?deals.map(d=>`
+      <div class="deal-row">
+        <div><div style="font-weight:500">${d.address}</div><div style="margin-top:4px"><span class="stage-dot ${stageColor(d.stage)}"></span><span style="font-size:12px;color:#888">${d.stage}</span></div></div>
+        <div style="font-weight:500">${fmt(d.our_offer||d.their_offer)}</div>
+      </div>`).join(''):'<div style="font-size:13px;color:#aaa">No deals yet</div>'}
     </div>
-    <div class="card">
-      <div class="section-label">Deal history</div>
-      ${d.deals.map(deal=>`
-        <div class="deal-row">
-          <div>
-            <div style="font-weight:500;color:var(--color-text-primary)">${deal.addr}</div>
-            <div class="deal-stage"><div class="stage-dot ${deal.color}"></div><span class="stage-label">${deal.stage}</span></div>
-          </div>
-          <div style="font-size:13px;font-weight:500;color:var(--color-text-primary)">${deal.offer}</div>
-        </div>
-      `).join('')}
-    </div>
-  </div>
-`;
+  </div>`;
+}
 
-screens.clients = () => `
-  <div class="header"><h1>Clients</h1><p>4 clients tracked</p></div>
+// ─── CLIENTS ─────────────────────────────────────────────────
+async function screenClients() {
+  const {data:clients, error} = await sb.from('clients').select('*').eq('user_id',currentUser.id).order('full_name');
+  if (error) return `<div class="content"><div class="error-msg">${error.message}</div></div>`;
+  if (!clients.length) return `<div class="header"><h1>Clients</h1><p>No clients yet</p></div><div class="content"><button class="btn btn-primary" onclick="navigate('add-client')">+ Add your first client</button></div>`;
+
+  function clientBadge(c) {
+    if (c.retainer_required) return '<span class="item-badge badge-red">Retainer req.</span>';
+    if (c.flag_reason) return '<span class="item-badge badge-amber">Flagged</span>';
+    return '<span class="item-badge badge-green">Good standing</span>';
+  }
+
+  return `
+  <div class="header"><h1>Clients</h1><p>${clients.length} tracked</p></div>
   <div class="content">
     <div class="card">
-      <div class="list-item" onclick="navigate('client-detail',{name:'Robert Chen',visits:9,offers:2,offerAmts:['$310K','$295K'],flag:'High visits, low offers',retainer:true,notes:'Has visited 9 properties in 3 months. Both offers were significantly below market value.'})">
-        <div class="avatar av-red">RC</div>
-        <div class="item-info"><div class="item-name">Robert Chen</div><div class="item-sub">9 visits · 2 offers</div></div>
-        <div class="item-right"><div class="item-badge badge-red">Retainer req.</div></div>
-      </div>
-      <div class="list-item" onclick="navigate('client-detail',{name:'Amy Solis',visits:6,offers:3,offerAmts:['$520K','$505K','$498K'],flag:'Unrealistic offers',retainer:false,notes:'Offers consistently 15-20% below list price. Has rejected 2 counteroffers.'})">
-        <div class="avatar av-amber">AS</div>
-        <div class="item-info"><div class="item-name">Amy Solis</div><div class="item-sub">6 visits · 3 offers</div></div>
-        <div class="item-right"><div class="item-badge badge-amber">Flagged</div></div>
-      </div>
-      <div class="list-item" onclick="navigate('client-detail',{name:'James Holbrook',visits:3,offers:2,offerAmts:['$445K','$460K'],flag:null,retainer:false,notes:'Reasonable client. Offers are near market value. Second offer accepted.'})">
-        <div class="avatar av-teal">JH</div>
-        <div class="item-info"><div class="item-name">James Holbrook</div><div class="item-sub">3 visits · 2 offers</div></div>
-        <div class="item-right"><div class="item-badge badge-green">Good standing</div></div>
-      </div>
-      <div class="list-item" onclick="navigate('client-detail',{name:'Priya Nair',visits:1,offers:1,offerAmts:['$389K'],flag:null,retainer:false,notes:'New client. First visit and offer. Too early to assess.'})">
-        <div class="avatar av-purple">PN</div>
-        <div class="item-info"><div class="item-name">Priya Nair</div><div class="item-sub">1 visit · 1 offer</div></div>
-        <div class="item-right"><div class="item-badge badge-gray">New</div></div>
-      </div>
+      ${clients.map(c=>`
+      <div class="list-item" onclick="navigate('client-detail','${c.id}')">
+        <div class="avatar ${avColor(c.full_name)}">${initials(c.full_name)}</div>
+        <div class="item-info"><div class="item-name">${c.full_name}</div><div class="item-sub">${c.phone||c.email||'—'}</div></div>
+        <div class="item-right">${clientBadge(c)}</div>
+      </div>`).join('')}
     </div>
-    <button class="btn btn-outline" onclick="navigate('add-client')">+ Add client</button>
-  </div>
-`;
+    <button class="btn" onclick="navigate('add-client')">+ Add client</button>
+  </div>`;
+}
 
-screens['client-detail'] = (d) => `
+async function screenClientDetail(clientId) {
+  const [{data:client},{data:visits},{data:deals}] = await Promise.all([
+    sb.from('clients').select('*').eq('id',clientId).single(),
+    sb.from('visits').select('*').eq('client_id',clientId).order('visit_date',{ascending:false}),
+    sb.from('deals').select('*,offers(*)').eq('client_id',clientId).order('created_at',{ascending:false})
+  ]);
+  if (!client) return `<div class="content"><div class="error-msg">Client not found</div></div>`;
+  const visitCount = (visits||[]).length;
+  const allOffers = (deals||[]).flatMap(d=>d.offers||[]);
+  const visitPct = Math.min(visitCount/10*100,100);
+  const visitColor = visitCount>6?'#A32D2D':visitCount>3?'#BA7517':'#185FA5';
+
+  return `
   <div class="detail-hero">
-    <div class="detail-avatar" style="width:52px;height:52px;border-radius:50%;background:#E6F1FB;color:#0C447C;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:500">${d.name.split(' ').map(n=>n[0]).join('')}</div>
+    <div class="avatar ${avColor(client.full_name)}" style="width:52px;height:52px;font-size:16px">${initials(client.full_name)}</div>
     <div>
-      <div style="font-size:17px;font-weight:500;color:var(--color-text-primary)">${d.name}</div>
-      <div style="font-size:13px;color:var(--color-text-secondary)">${d.visits} visits · ${d.offers} offers</div>
+      <div style="font-size:17px;font-weight:500">${client.full_name}</div>
+      <div style="font-size:13px;color:#888">${visitCount} visits · ${allOffers.length} offers</div>
     </div>
   </div>
   <div class="content">
-    <span class="back-btn" onclick="navigate('clients')">← Back to clients</span>
-    ${d.retainer ? `<div class="retainer-badge"><span style="font-size:16px">&#9888;</span><span class="retainer-text">Retainer fee required — marked by agent</span></div>` : ''}
-    ${d.flag ? `<div class="flag-banner"><span class="flag-icon">&#9873;</span><div class="flag-text"><strong>Auto-flagged:</strong> ${d.flag}. Review before scheduling additional visits.</div></div>` : ''}
+    <span class="back-btn" onclick="navigate('clients')">← Back</span>
+    ${client.retainer_required?'<div class="retainer-badge">&#9888; Retainer fee required</div>':''}
+    ${client.flag_reason?`<div class="flag-banner">&#9873; <strong>Flagged:</strong> ${client.flag_reason}</div>`:''}
     <div class="card">
-      <div class="section-label">Visit & offer activity</div>
-      <div style="margin-bottom:10px">
-        <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:4px">Visits (${d.visits})</div>
-        <div class="progress-bar"><div class="progress-fill" style="width:${Math.min(d.visits/10*100,100)}%;background:${d.visits>6?'#A32D2D':d.visits>3?'#BA7517':'#185FA5'}"></div></div>
-      </div>
-      <div>
-        <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:4px">Offers submitted</div>
-        ${d.offerAmts.map((o,i)=>`<div class="deal-row"><span style="color:var(--color-text-secondary)">Offer ${i+1}</span><span style="font-weight:500">${o}</span></div>`).join('')}
+      <div class="section-label">Visit history (${visitCount})</div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${visitPct}%;background:${visitColor}"></div></div>
+      <div style="margin-top:10px">
+        ${(visits||[]).slice(0,5).map(v=>`
+        <div class="deal-row"><span style="color:#888">${v.visit_date}</span><span style="font-weight:500;font-size:12px">${v.address}</span></div>`).join('')||'<div style="font-size:13px;color:#aaa">No visits logged</div>'}
       </div>
     </div>
     <div class="card">
-      <div class="section-label">Notes</div>
-      <div style="font-size:13px;color:var(--color-text-primary);line-height:1.6">${d.notes}</div>
+      <div class="section-label">Offers (${allOffers.length})</div>
+      ${allOffers.slice(0,5).map(o=>`
+      <div class="deal-row">
+        <span style="color:#888">${o.offer_date} · ${o.direction}</span>
+        <span style="font-weight:500">${fmt(o.amount)} <span class="item-badge badge-${o.status==='Accepted'?'green':o.status==='Rejected'?'red':'gray'}">${o.status}</span></span>
+      </div>`).join('')||'<div style="font-size:13px;color:#aaa">No offers logged</div>'}
     </div>
+    ${client.notes?`<div class="card"><div class="section-label">Notes</div><div style="font-size:13px;line-height:1.6">${client.notes}</div></div>`:''}
     <div style="display:flex;gap:8px">
-      <button class="btn btn-outline" style="flex:1" onclick="alert('Log visit — connect to Supabase')">Log visit</button>
-      <button class="btn btn-outline" style="flex:1" onclick="alert('Log offer — connect to Supabase')">Log offer</button>
+      <button class="btn" style="flex:1" onclick="navigate('add-visit','${client.id}')">Log visit</button>
+      <button class="btn" style="flex:1" onclick="navigate('add-offer','${client.id}')">Log offer</button>
     </div>
-    ${!d.retainer ? `<button class="btn btn-outline" style="border-color:#A32D2D;color:#A32D2D" onclick="alert('Retainer flag saved — connect to Supabase')">Mark retainer required</button>` : ''}
-  </div>
-`;
+    ${!client.retainer_required?`<button class="btn btn-danger" onclick="setRetainer('${client.id}')">Mark retainer required</button>`:''}
+  </div>`;
+}
 
-screens.add = () => `
-  <div class="header"><h1>Add new</h1><p>Choose what to add</p></div>
+async function setRetainer(clientId) {
+  const {error} = await sb.from('clients').update({retainer_required:true}).eq('id',clientId);
+  if (error) { toast('Error: '+error.message); return; }
+  toast('Retainer flag saved');
+  navigate('client-detail', clientId);
+}
+
+// ─── ADD SCREENS ─────────────────────────────────────────────
+function screenAdd() {
+  return `
+  <div class="header"><h1>Add new</h1></div>
   <div class="content">
     <div class="card" style="cursor:pointer" onclick="navigate('add-agent')">
       <div style="display:flex;align-items:center;gap:14px">
-        <div style="width:42px;height:42px;border-radius:10px;background:#E6F1FB;display:flex;align-items:center;justify-content:center">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7" r="3.5" stroke="#185FA5" stroke-width="1.5"/><path d="M3 17c0-3.866 3.134-7 7-7s7 3.134 7 7" stroke="#185FA5" stroke-width="1.5" stroke-linecap="round"/></svg>
-        </div>
-        <div><div style="font-weight:500;font-size:15px">Add agent</div><div style="font-size:13px;color:var(--color-text-secondary)">Track a new agent relationship</div></div>
+        <div style="width:42px;height:42px;border-radius:10px;background:#E6F1FB;display:flex;align-items:center;justify-content:center;font-size:20px">&#128100;</div>
+        <div><div style="font-weight:500;font-size:15px">Add agent</div><div style="font-size:13px;color:#888">Track a new agent relationship</div></div>
       </div>
     </div>
     <div class="card" style="cursor:pointer" onclick="navigate('add-client')">
       <div style="display:flex;align-items:center;gap:14px">
-        <div style="width:42px;height:42px;border-radius:10px;background:#E1F5EE;display:flex;align-items:center;justify-content:center">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="7" cy="7" r="3" stroke="#0F6E56" stroke-width="1.5"/><circle cx="14" cy="8" r="2.5" stroke="#0F6E56" stroke-width="1.5"/><path d="M1 17c0-3 2.686-5.5 6-5.5s6 2.5 6 5.5" stroke="#0F6E56" stroke-width="1.5" stroke-linecap="round"/><path d="M14.5 12.5c1.933 0 3.5 1.343 3.5 3" stroke="#0F6E56" stroke-width="1.5" stroke-linecap="round"/></svg>
-        </div>
-        <div><div style="font-weight:500;font-size:15px">Add client</div><div style="font-size:13px;color:var(--color-text-secondary)">Track a new buyer or seller</div></div>
+        <div style="width:42px;height:42px;border-radius:10px;background:#E1F5EE;display:flex;align-items:center;justify-content:center;font-size:20px">&#128101;</div>
+        <div><div style="font-weight:500;font-size:15px">Add client</div><div style="font-size:13px;color:#888">Track a new buyer or seller</div></div>
       </div>
     </div>
-  </div>
-`;
+  </div>`;
+}
 
-screens['add-agent'] = () => `
+function screenAddAgent() {
+  return `
   <div class="header"><h1>New agent</h1></div>
   <div class="content">
     <span class="back-btn" onclick="navigate('agents')">← Cancel</span>
+    <div id="add-error"></div>
     <div class="card">
-      <div class="input-group"><label>Full name</label><input placeholder="e.g. Sandra Lee"/></div>
-      <div class="input-group"><label>Brokerage</label><input placeholder="e.g. Compass"/></div>
-      <div class="input-group"><label>Phone</label><input type="tel" placeholder="(555) 000-0000"/></div>
+      <div class="input-group"><label>Full name *</label><input id="a-name" placeholder="Sandra Lee"/></div>
+      <div class="input-group"><label>Brokerage</label><input id="a-brokerage" placeholder="Compass"/></div>
+      <div class="input-group"><label>Phone</label><input id="a-phone" type="tel" placeholder="(555) 000-0000"/></div>
+      <div class="input-group"><label>Email</label><input id="a-email" type="email" placeholder="agent@email.com"/></div>
       <div class="input-group"><label>Category</label>
-        <select>
-          <option>Preferred</option>
-          <option>Reliable</option>
-          <option>Neutral</option>
-          <option>Difficult</option>
-          <option>Avoid</option>
-        </select>
+        <select id="a-cat"><option>Preferred</option><option>Reliable</option><option selected>Neutral</option><option>Difficult</option><option>Avoid</option></select>
       </div>
-      <div class="input-group"><label>Rating (1–5)</label>
-        <select>
-          <option>5 — Excellent</option>
-          <option>4 — Good</option>
-          <option>3 — Neutral</option>
-          <option>2 — Poor</option>
-          <option>1 — Avoid</option>
-        </select>
+      <div class="input-group"><label>Rating</label>
+        <select id="a-rating"><option value="5">5 — Excellent</option><option value="4">4 — Good</option><option value="3" selected>3 — Neutral</option><option value="2">2 — Poor</option><option value="1">1 — Avoid</option></select>
       </div>
-      <div class="input-group"><label>Tags (comma-separated)</label><input placeholder="e.g. fast responder, fair offers"/></div>
-      <div class="input-group"><label>Notes</label><textarea placeholder="Anything notable about working with this agent…"></textarea></div>
+      <div class="input-group"><label>Tags (comma-separated)</label><input id="a-tags" placeholder="fast responder, fair offers"/></div>
+      <div class="input-group"><label>Notes</label><textarea id="a-notes" placeholder="Anything notable…"></textarea></div>
     </div>
-    <button class="btn btn-primary" onclick="alert('Save — connect to Supabase insert')">Save agent</button>
-  </div>
-`;
+    <button class="btn btn-primary" onclick="saveAgent()">Save agent</button>
+  </div>`;
+}
 
-screens['add-client'] = () => `
+async function saveAgent() {
+  const name = document.getElementById('a-name').value.trim();
+  if (!name) { document.getElementById('add-error').innerHTML='<div class="error-msg">Name is required</div>'; return; }
+  const allowed = await sb.rpc('check_tier_limit',{p_user_id:currentUser.id, p_table:'agents'});
+  if (!allowed.data) { document.getElementById('add-error').innerHTML='<div class="error-msg">Free tier limit reached (5 agents). Upgrade to add more.</div>'; return; }
+  const {data:agent, error} = await sb.from('agents').insert({
+    user_id: currentUser.id,
+    full_name: name,
+    brokerage: document.getElementById('a-brokerage').value.trim()||null,
+    phone: document.getElementById('a-phone').value.trim()||null,
+    email: document.getElementById('a-email').value.trim()||null,
+    category: document.getElementById('a-cat').value,
+    rating: parseInt(document.getElementById('a-rating').value),
+    notes: document.getElementById('a-notes').value.trim()||null
+  }).select().single();
+  if (error) { document.getElementById('add-error').innerHTML=`<div class="error-msg">${error.message}</div>`; return; }
+  const tags = document.getElementById('a-tags').value.split(',').map(t=>t.trim()).filter(Boolean);
+  if (tags.length) await sb.from('agent_tags').insert(tags.map(tag=>({agent_id:agent.id, tag})));
+  toast('Agent saved');
+  navigate('agents');
+}
+
+function screenAddClient() {
+  return `
   <div class="header"><h1>New client</h1></div>
   <div class="content">
     <span class="back-btn" onclick="navigate('clients')">← Cancel</span>
+    <div id="add-error"></div>
     <div class="card">
-      <div class="input-group"><label>Full name</label><input placeholder="e.g. James Holbrook"/></div>
-      <div class="input-group"><label>Phone</label><input type="tel" placeholder="(555) 000-0000"/></div>
-      <div class="input-group"><label>Email</label><input type="email" placeholder="client@email.com"/></div>
-      <div class="input-group"><label>Budget range</label><input placeholder="e.g. $400K – $500K"/></div>
-      <div class="input-group"><label>Notes</label><textarea placeholder="Initial impressions, preferences, concerns…"></textarea></div>
+      <div class="input-group"><label>Full name *</label><input id="c-name" placeholder="James Holbrook"/></div>
+      <div class="input-group"><label>Phone</label><input id="c-phone" type="tel" placeholder="(555) 000-0000"/></div>
+      <div class="input-group"><label>Email</label><input id="c-email" type="email" placeholder="client@email.com"/></div>
+      <div class="input-group"><label>Budget min</label><input id="c-bmin" type="number" placeholder="400000"/></div>
+      <div class="input-group"><label>Budget max</label><input id="c-bmax" type="number" placeholder="500000"/></div>
+      <div class="input-group"><label>Notes</label><textarea id="c-notes" placeholder="Initial impressions…"></textarea></div>
     </div>
-    <button class="btn btn-primary" onclick="alert('Save — connect to Supabase insert')">Save client</button>
-  </div>
-`;
+    <button class="btn btn-primary" onclick="saveClient()">Save client</button>
+  </div>`;
+}
 
-navigate('login');
+async function saveClient() {
+  const name = document.getElementById('c-name').value.trim();
+  if (!name) { document.getElementById('add-error').innerHTML='<div class="error-msg">Name is required</div>'; return; }
+  const allowed = await sb.rpc('check_tier_limit',{p_user_id:currentUser.id, p_table:'clients'});
+  if (!allowed.data) { document.getElementById('add-error').innerHTML='<div class="error-msg">Free tier limit reached (5 clients). Upgrade to add more.</div>'; return; }
+  const {error} = await sb.from('clients').insert({
+    user_id: currentUser.id,
+    full_name: name,
+    phone: document.getElementById('c-phone').value.trim()||null,
+    email: document.getElementById('c-email').value.trim()||null,
+    budget_min: document.getElementById('c-bmin').value||null,
+    budget_max: document.getElementById('c-bmax').value||null,
+    notes: document.getElementById('c-notes').value.trim()||null
+  });
+  if (error) { document.getElementById('add-error').innerHTML=`<div class="error-msg">${error.message}</div>`; return; }
+  toast('Client saved');
+  navigate('clients');
+}
+
+function screenAddVisit(clientId) {
+  return `
+  <div class="header"><h1>Log visit</h1></div>
+  <div class="content">
+    <span class="back-btn" onclick="navigate('client-detail','${clientId}')">← Cancel</span>
+    <div id="add-error"></div>
+    <div class="card">
+      <div class="input-group"><label>Address *</label><input id="v-addr" placeholder="142 Maple St"/></div>
+      <div class="input-group"><label>Date</label><input id="v-date" type="date" value="${new Date().toISOString().split('T')[0]}"/></div>
+      <div class="input-group"><label>Outcome</label>
+        <select id="v-outcome"><option>Interested</option><option>Passed</option><option>Made offer</option><option>Undecided</option></select>
+      </div>
+      <div class="input-group"><label>Notes</label><textarea id="v-notes" placeholder="Observations from the visit…"></textarea></div>
+    </div>
+    <button class="btn btn-primary" onclick="saveVisit('${clientId}')">Save visit</button>
+  </div>`;
+}
+
+async function saveVisit(clientId) {
+  const addr = document.getElementById('v-addr').value.trim();
+  if (!addr) { document.getElementById('add-error').innerHTML='<div class="error-msg">Address is required</div>'; return; }
+  const {error} = await sb.from('visits').insert({
+    client_id: clientId,
+    user_id: currentUser.id,
+    address: addr,
+    visit_date: document.getElementById('v-date').value,
+    outcome: document.getElementById('v-outcome').value,
+    notes: document.getElementById('v-notes').value.trim()||null
+  });
+  if (error) { document.getElementById('add-error').innerHTML=`<div class="error-msg">${error.message}</div>`; return; }
+  await sb.rpc('evaluate_client_flag',{p_client_id:clientId});
+  toast('Visit logged');
+  navigate('client-detail', clientId);
+}
+
+function screenAddOffer(clientId) {
+  return `
+  <div class="header"><h1>Log offer</h1></div>
+  <div class="content">
+    <span class="back-btn" onclick="navigate('client-detail','${clientId}')">← Cancel</span>
+    <div id="add-error"></div>
+    <div class="card">
+      <div class="input-group"><label>Property address *</label><input id="o-addr" placeholder="88 Birch Ave"/></div>
+      <div class="input-group"><label>Amount *</label><input id="o-amt" type="number" placeholder="450000"/></div>
+      <div class="input-group"><label>Direction</label>
+        <select id="o-dir"><option value="sent">Sent (our offer)</option><option value="received">Received (their offer)</option></select>
+      </div>
+      <div class="input-group"><label>Status</label>
+        <select id="o-status"><option>Pending</option><option>Accepted</option><option>Rejected</option><option>Countered</option><option>Withdrawn</option></select>
+      </div>
+      <div class="input-group"><label>Date</label><input id="o-date" type="date" value="${new Date().toISOString().split('T')[0]}"/></div>
+      <div class="input-group"><label>Notes</label><textarea id="o-notes" placeholder="Context on this offer…"></textarea></div>
+    </div>
+    <button class="btn btn-primary" onclick="saveOffer('${clientId}')">Save offer</button>
+  </div>`;
+}
+
+async function saveOffer(clientId) {
+  const addr = document.getElementById('o-addr').value.trim();
+  const amt  = document.getElementById('o-amt').value;
+  if (!addr||!amt) { document.getElementById('add-error').innerHTML='<div class="error-msg">Address and amount are required</div>'; return; }
+  const {data:deal} = await sb.from('deals').insert({
+    user_id: currentUser.id,
+    client_id: clientId,
+    address: addr,
+    stage: 'Active',
+    our_offer: document.getElementById('o-dir').value==='sent'?amt:null,
+    their_offer: document.getElementById('o-dir').value==='received'?amt:null
+  }).select().single();
+  if (!deal) { document.getElementById('add-error').innerHTML='<div class="error-msg">Could not create deal record</div>'; return; }
+  const {error} = await sb.from('offers').insert({
+    deal_id: deal.id,
+    amount: amt,
+    direction: document.getElementById('o-dir').value,
+    status: document.getElementById('o-status').value,
+    offer_date: document.getElementById('o-date').value,
+    notes: document.getElementById('o-notes').value.trim()||null
+  });
+  if (error) { document.getElementById('add-error').innerHTML=`<div class="error-msg">${error.message}</div>`; return; }
+  await sb.rpc('evaluate_client_flag',{p_client_id:clientId});
+  toast('Offer logged');
+  navigate('client-detail', clientId);
+}
+
+// ─── Boot ─────────────────────────────────────────────────────
+(async () => {
+  const {data:{session}} = await sb.auth.getSession();
+  if (session?.user) {
+    currentUser = session.user;
+    const {data} = await sb.from('profiles').select('*').eq('id',session.user.id).single();
+    currentProfile = data;
+    navigate('dashboard');
+  } else {
+    navigate('login');
+  }
+})();
 </script>
 </body>
 </html>
