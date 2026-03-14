@@ -193,7 +193,7 @@ function parseDollar(val) {
 }
 
 // ── Navigation ─────────────────────────────────────────────────
-var noNavScreens = ['login', 'signup', 'agent-detail', 'client-detail', 'add-agent', 'add-client', 'add-visit', 'add-offer'];
+var noNavScreens = ['login', 'signup', 'agent-detail', 'client-detail', 'add-agent', 'add-client', 'add-visit', 'add-offer', 'upgrade'];
 
 async function navigate(name, data) {
   document.getElementById('nav').style.display = noNavScreens.indexOf(name) > -1 ? 'none' : 'flex';
@@ -217,7 +217,7 @@ async function renderScreen(name, data) {
   else if (name === 'add-agent'){ scr.innerHTML = screenAddAgent(); }
   else if (name === 'add-client'){ scr.innerHTML = screenAddClient(); }
   else if (name === 'add-visit'){ scr.innerHTML = screenAddVisit(data); }
-  else if (name === 'add-offer'){ scr.innerHTML = screenAddOffer(data); }
+  else if (name === 'upgrade')  { scr.innerHTML = screenUpgrade(); }
 }
 
 // ── Login ──────────────────────────────────────────────────────
@@ -316,7 +316,7 @@ async function screenDashboard() {
   html += '<div class="content">';
   if (tier === 'free') {
     html += '<div class="free-tier"><span class="free-tier-label">Free — ' + agents.length + '/5 agents, ' + clients.length + '/5 clients</span>'
-         + '<button class="upgrade-btn" onclick="toast(\'Stripe coming soon!\')">Upgrade</button></div>';
+         + '<button class="upgrade-btn" onclick="navigate(\'upgrade\')">Upgrade</button></div>';
   }
   html += '<div class="metric-grid">'
        + '<div class="metric"><div class="metric-label">Active deals</div><div class="metric-value">' + activeDeals + '</div></div>'
@@ -500,6 +500,76 @@ async function setRetainer(clientId) {
 }
 
 // ── Add screens ────────────────────────────────────────────────
+function screenUpgrade() {
+  var tier = (currentProfile && currentProfile.tier) || 'free';
+  if (tier === 'paid') {
+    return '<div class="header"><h1>Your plan</h1></div>'
+         + '<div class="content">'
+         + '<div class="card" style="text-align:center;padding:24px 16px">'
+         + '<div style="font-size:32px;margin-bottom:8px">&#10003;</div>'
+         + '<div style="font-size:17px;font-weight:500;margin-bottom:6px">You\'re on the Pro plan</div>'
+         + '<div style="font-size:13px;color:#888">Unlimited agents, clients, and access to the reporting dashboard.</div>'
+         + '</div>'
+         + '<span class="back-btn" onclick="navigate(\'dashboard\')">← Back to dashboard</span>'
+         + '</div>';
+  }
+  return '<div class="header"><h1>Upgrade to Pro</h1><p>Unlock the full RealTrack experience</p></div>'
+       + '<div class="content">'
+       + '<span class="back-btn" onclick="navigate(\'dashboard\')">← Back</span>'
+
+       + '<div class="card" style="border:1.5px solid #185FA5">'
+       + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'
+       + '<div style="font-size:16px;font-weight:500">Pro — Monthly</div>'
+       + '<div style="font-size:20px;font-weight:500;color:#185FA5">$15<span style="font-size:13px;color:#888">/mo</span></div>'
+       + '</div>'
+       + '<div style="font-size:12px;color:#888;margin-bottom:14px">Billed monthly. Cancel anytime.</div>'
+       + featureList()
+       + '<button class="btn btn-primary" style="margin-top:14px" onclick="stripeComingSoon()">Get started — $15/mo</button>'
+       + '</div>'
+
+       + '<div class="card">'
+       + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'
+       + '<div style="font-size:16px;font-weight:500">Pro — Annual</div>'
+       + '<div style="font-size:20px;font-weight:500;color:#185FA5">$10<span style="font-size:13px;color:#888">/mo</span></div>'
+       + '</div>'
+       + '<div style="font-size:12px;color:#888;margin-bottom:6px">$120 billed once per year.</div>'
+       + '<div style="display:inline-block;font-size:11px;padding:2px 8px;border-radius:6px;background:#EAF3DE;color:#27500A;margin-bottom:14px">Save $60/year</div>'
+       + featureList()
+       + '<button class="btn btn-primary" style="margin-top:14px" onclick="stripeComingSoon()">Get started — $120/yr</button>'
+       + '</div>'
+
+       + '<div class="card" style="background:#f5f5f3;border:none">'
+       + '<div class="section-label">Free tier — current plan</div>'
+       + '<div style="font-size:13px;color:#888;line-height:1.7">'
+       + 'Up to 5 agents · Up to 5 clients · Core CRM features'
+       + '</div>'
+       + '</div>'
+       + '</div>';
+}
+
+function featureList() {
+  var items = [
+    'Unlimited agents and clients',
+    'Full deal and offer history',
+    'Auto-flagging and retainer tracking',
+    'Reporting dashboard',
+    'Priority support'
+  ];
+  var html = '<div style="display:flex;flex-direction:column;gap:8px">';
+  items.forEach(function(item) {
+    html += '<div style="display:flex;align-items:center;gap:10px;font-size:13px">'
+          + '<span style="color:#3B6D11;font-weight:500;font-size:15px">&#10003;</span>'
+          + '<span>' + item + '</span>'
+          + '</div>';
+  });
+  html += '</div>';
+  return html;
+}
+
+function stripeComingSoon() {
+  toast('Payments coming soon — stay tuned!', 3000);
+}
+
 function screenAdd() {
   return '<div class="header"><h1>Add new</h1></div>'
        + '<div class="content">'
