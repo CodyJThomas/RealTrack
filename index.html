@@ -2,216 +2,262 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 <title>RealTrack</title>
 <link rel="manifest" href="/manifest.json"/>
 <meta name="theme-color" content="#1B3060"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="RealTrack"/>
 <link rel="apple-touch-icon" href="/icons/icon-192.png"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,sans-serif}
-body{background:#f5f5f3;display:flex;justify-content:center;align-items:flex-start;min-height:100vh;padding:24px 12px}
-@media(prefers-color-scheme:dark){
-  body{background:#0f1a2e}
-  .phone{background:#1a2540;border-color:rgba(255,255,255,0.08)}
-  .status-bar{background:#1a2540}
-  .nav-bar{background:#1a2540;border-color:rgba(255,255,255,0.08)}
-  .header{border-color:rgba(255,255,255,0.08)}
-  .header h1{color:#f0f4ff}
-  .header p{color:#8899bb}
-  .card{background:#1f2d4a;border-color:rgba(255,255,255,0.08)}
-  .metric{background:#162036}
-  .metric-label{color:#8899bb}
-  .metric-value{color:#f0f4ff}
-  .item-name{color:#f0f4ff}
-  .item-sub{color:#8899bb}
-  .nav-label{color:#8899bb}
-  .input-group label{color:#8899bb}
-  .input-group input,.input-group select,.input-group textarea{background:#162036;border-color:rgba(255,255,255,0.1);color:#f0f4ff}
-  .btn{background:transparent;border-color:rgba(255,255,255,0.15);color:#f0f4ff}
-  .tooltip{background:#162036;color:#8899bb}
-  .empty-title{color:#f0f4ff}
-  .empty-sub{color:#8899bb}
-  .modal{background:#1f2d4a}
-  .modal-title{color:#f0f4ff}
-  .modal-sub{color:#8899bb}
-  .act-name{color:#f0f4ff}
-  .act-addr{color:#8899bb}
-  .act-meta{color:#667799}
-  .section-label{color:#6677aa}
-  .filter-chip{background:#162036;border-color:rgba(255,255,255,0.1);color:#8899bb}
-  .free-tier{background:#162036}
-  .free-tier-label{color:#7799cc}
-  .detail-hero{background:#162036;border-color:rgba(255,255,255,0.08)}
-  .deal-row{border-color:rgba(255,255,255,0.06)}
-  .progress-bar{background:#162036}
-  .tag{background:#162036;color:#8899bb}
-  .checklist-item{border-color:rgba(255,255,255,0.06)}
-  .bar-label{color:#8899bb}
-  .bar-track{background:#162036}
-  .list-item{border-color:rgba(255,255,255,0.06)}
-  .act-row{border-color:rgba(255,255,255,0.06)}
-  .retainer-badge{background:#3d1a1a;border-color:#7a2a2a}
-  .flag-banner{background:#3d2e0a;border-color:#7a5a14}
-  .error-msg{background:#3d1a1a;color:#ff8888}
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,sans-serif;-webkit-tap-highlight-color:transparent}
+
+:root{
+  --brand:#1B3060;
+  --brand-light:#E8EDF7;
+  --surface:#ffffff;
+  --surface2:#f5f5f3;
+  --surface3:#ececea;
+  --text1:#111111;
+  --text2:#666666;
+  --text3:#aaaaaa;
+  --border:rgba(0,0,0,0.08);
+  --nav-h:60px;
+  --header-h:60px;
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bottom:env(safe-area-inset-bottom,0px);
 }
-.phone{width:375px;min-height:720px;background:#fff;border-radius:40px;border:1.5px solid rgba(0,0,0,0.15);overflow:hidden;display:flex;flex-direction:column}
-.status-bar{background:#fff;padding:12px 24px 6px;display:flex;justify-content:space-between;font-size:12px;font-weight:500;color:#888}
-.screen{flex:1;overflow-y:auto;display:flex;flex-direction:column}
-.nav-bar{background:#fff;border-top:0.5px solid rgba(0,0,0,0.1);display:flex;justify-content:space-around;padding:10px 0 16px}
-.nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px 8px;border-radius:8px}
-.nav-label{font-size:10px;color:#888}
-.nav-item.active .nav-label{color:#1B3060;font-weight:500}
-.nav-dot{width:22px;height:3px;border-radius:2px;background:transparent}
-.nav-item.active .nav-dot{background:#1B3060}
-.header{padding:20px 20px 12px;border-bottom:0.5px solid rgba(0,0,0,0.08)}
-.header h1{font-size:22px;font-weight:500;color:#111}
-.header p{font-size:13px;color:#888;margin-top:2px}
-.content{padding:16px;flex:1;display:flex;flex-direction:column;gap:12px}
-.card{background:#fff;border:0.5px solid rgba(0,0,0,0.1);border-radius:14px;padding:14px 16px}
+
+@media(prefers-color-scheme:dark){
+  :root{
+    --surface:#111827;
+    --surface2:#1a2540;
+    --surface3:#162036;
+    --text1:#f0f4ff;
+    --text2:#8899bb;
+    --text3:#556688;
+    --border:rgba(255,255,255,0.07);
+    --brand-light:#1a2540;
+  }
+}
+
+html,body{height:100%;overflow:hidden;background:var(--surface)}
+
+/* ── App shell ── */
+#app{
+  position:fixed;inset:0;
+  display:flex;flex-direction:column;
+  background:var(--surface);
+}
+
+/* ── Fixed header ── */
+#app-header{
+  flex-shrink:0;
+  background:var(--surface);
+  border-bottom:0.5px solid var(--border);
+  padding:calc(var(--safe-top) + 12px) 20px 12px;
+  display:flex;align-items:center;justify-content:space-between;
+  min-height:calc(var(--safe-top) + var(--header-h));
+  z-index:100;
+}
+#app-header.hidden{display:none}
+.header-left{display:flex;flex-direction:column;gap:1px}
+.header-title{font-size:20px;font-weight:600;color:var(--text1);line-height:1.2}
+.header-sub{font-size:12px;color:var(--text2)}
+.header-logo{height:32px;object-fit:contain;opacity:0.9}
+
+/* ── Scrollable content ── */
+#screen{
+  flex:1;
+  overflow-y:auto;
+  overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;
+  background:var(--surface2);
+}
+
+/* ── Fixed nav bar ── */
+#nav{
+  flex-shrink:0;
+  background:var(--surface);
+  border-top:0.5px solid var(--border);
+  display:flex;justify-content:space-around;align-items:flex-start;
+  padding:10px 0 calc(var(--safe-bottom) + 8px);
+  min-height:calc(var(--safe-bottom) + var(--nav-h));
+  z-index:100;
+}
+#nav.hidden{display:none}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px 12px;border-radius:10px;min-width:56px}
+.nav-label{font-size:10px;color:var(--text2);transition:color 0.15s}
+.nav-item.active .nav-label{color:var(--brand);font-weight:600}
+.nav-dot{width:20px;height:2.5px;border-radius:2px;background:transparent;transition:background 0.15s;margin-bottom:1px}
+.nav-item.active .nav-dot{background:var(--brand)}
+.nav-icon{color:var(--text2);transition:color 0.15s}
+.nav-item.active .nav-icon{color:var(--brand)}
+
+/* ── Content sections ── */
+.content{padding:16px;display:flex;flex-direction:column;gap:12px;min-height:100%}
+.card{background:var(--surface);border:0.5px solid var(--border);border-radius:14px;padding:14px 16px}
 .metric-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.metric{background:#f5f5f3;border-radius:10px;padding:12px}
-.metric-label{font-size:12px;color:#888;margin-bottom:4px}
-.metric-value{font-size:22px;font-weight:500;color:#111}
+.metric{background:var(--surface3);border-radius:10px;padding:12px}
+.metric-label{font-size:12px;color:var(--text2);margin-bottom:4px}
+.metric-value{font-size:22px;font-weight:500;color:var(--text1)}
 .metric-value.warn{color:#BA7517}
 .metric-value.danger{color:#A32D2D}
 .metric-value.good{color:#3B6D11}
-.section-label{font-size:12px;font-weight:500;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px}
-.list-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:0.5px solid rgba(0,0,0,0.07);cursor:pointer}
+.section-label{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:10px}
+.list-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:0.5px solid var(--border);cursor:pointer}
 .list-item:last-child{border-bottom:none}
 .avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;flex-shrink:0}
-.av-blue{background:#E6F1FB;color:#1B3060}
+.av-blue{background:#E8EDF7;color:#1B3060}
 .av-teal{background:#E1F5EE;color:#085041}
 .av-amber{background:#FAEEDA;color:#633806}
 .av-red{background:#FCEBEB;color:#791F1F}
 .av-purple{background:#EEEDFE;color:#3C3489}
 .item-info{flex:1;min-width:0}
-.item-name{font-size:14px;font-weight:500;color:#111}
-.item-sub{font-size:12px;color:#888;margin-top:2px}
+.item-name{font-size:14px;font-weight:500;color:var(--text1)}
+.item-sub{font-size:12px;color:var(--text2);margin-top:2px}
 .item-right{text-align:right;flex-shrink:0}
-.item-badge{font-size:11px;padding:2px 8px;border-radius:6px;margin-top:3px;display:inline-block}
+.item-badge{font-size:11px;padding:2px 8px;border-radius:6px;display:inline-block;margin-top:2px}
 .badge-green{background:#EAF3DE;color:#27500A}
 .badge-red{background:#FCEBEB;color:#791F1F}
 .badge-amber{background:#FAEEDA;color:#633806}
-.badge-blue{background:#E6F1FB;color:#1B3060}
+.badge-blue{background:#E8EDF7;color:#1B3060}
 .badge-gray{background:#F1EFE8;color:#444441}
 .stars{color:#EF9F27;font-size:12px;letter-spacing:1px}
-.tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:6px;background:#F1EFE8;color:#444441;margin:2px 2px 0 0}
-.btn{display:block;width:100%;padding:13px;border-radius:12px;border:0.5px solid rgba(0,0,0,0.15);font-size:15px;font-weight:500;cursor:pointer;text-align:center;background:transparent;color:#111}
-.btn-primary{background:#1B3060;color:#fff;border:none}
+.tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:6px;background:var(--surface3);color:var(--text2);margin:2px 2px 0 0}
+.btn{display:block;width:100%;padding:13px;border-radius:12px;border:0.5px solid var(--border);font-size:15px;font-weight:500;cursor:pointer;text-align:center;background:transparent;color:var(--text1)}
+.btn-primary{background:var(--brand);color:#fff;border:none}
 .btn-danger{background:transparent;border:0.5px solid #A32D2D;color:#A32D2D}
 .input-group{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
-.input-group label{font-size:13px;color:#888}
-.input-group input,.input-group select,.input-group textarea{padding:10px 12px;border-radius:10px;border:0.5px solid rgba(0,0,0,0.15);font-size:14px;background:#fff;color:#111;width:100%}
+.input-group label{font-size:13px;color:var(--text2)}
+.input-group input,.input-group select,.input-group textarea{padding:10px 12px;border-radius:10px;border:0.5px solid var(--border);font-size:14px;background:var(--surface);color:var(--text1);width:100%}
 .input-group textarea{resize:none;height:70px}
 .flag-banner{background:#FAEEDA;border:0.5px solid #FAC775;border-radius:10px;padding:10px 14px;font-size:12px;color:#633806;line-height:1.5}
 .retainer-badge{background:#FCEBEB;border:0.5px solid #F7C1C1;border-radius:10px;padding:10px 14px;font-size:12px;color:#791F1F;font-weight:500}
-.free-tier{background:#E8EDF7;border-radius:10px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center}
-.free-tier-label{font-size:12px;color:#1B3060}
-.upgrade-btn{font-size:12px;background:#1B3060;color:#fff;padding:4px 12px;border-radius:6px;border:none;cursor:pointer;font-weight:500}
-.back-btn{font-size:13px;color:#1B3060;cursor:pointer;padding:4px 0;display:inline-block}
-.detail-hero{background:#f5f5f3;padding:20px;display:flex;align-items:center;gap:14px;border-bottom:0.5px solid rgba(0,0,0,0.08)}
-.deal-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:0.5px solid rgba(0,0,0,0.07);font-size:13px}
+.free-tier{background:var(--brand-light);border-radius:10px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center}
+.free-tier-label{font-size:12px;color:var(--brand)}
+.upgrade-btn{font-size:12px;background:var(--brand);color:#fff;padding:4px 12px;border-radius:6px;border:none;cursor:pointer;font-weight:500}
+.back-btn{font-size:13px;color:var(--brand);cursor:pointer;padding:4px 0;display:inline-block}
+.detail-hero{background:var(--surface3);padding:20px;display:flex;align-items:center;gap:14px;border-bottom:0.5px solid var(--border)}
+.deal-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:0.5px solid var(--border);font-size:13px}
 .deal-row:last-child{border-bottom:none}
-.progress-bar{height:4px;background:#f0f0ee;border-radius:2px;overflow:hidden;margin-top:6px}
+.progress-bar{height:4px;background:var(--surface3);border-radius:2px;overflow:hidden;margin-top:6px}
 .progress-fill{height:100%;border-radius:2px}
-.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#1B3060;color:#fff;padding:10px 20px;border-radius:10px;font-size:13px;z-index:999;opacity:0;transition:opacity 0.3s;pointer-events:none}
+.toast{position:fixed;bottom:calc(var(--safe-bottom) + var(--nav-h) + 12px);left:50%;transform:translateX(-50%);background:var(--brand);color:#fff;padding:10px 20px;border-radius:10px;font-size:13px;z-index:999;opacity:0;transition:opacity 0.3s;pointer-events:none;white-space:nowrap}
 .toast.show{opacity:1}
-.loading{padding:40px;text-align:center;color:#888;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:10px}
-.spinner{width:20px;height:20px;border:2px solid rgba(27,48,96,0.15);border-top-color:#1B3060;border-radius:50%;animation:spin 0.7s linear infinite}
+.loading{padding:60px 40px;text-align:center;color:var(--text2);font-size:14px;display:flex;flex-direction:column;align-items:center;gap:12px}
+.spinner{width:22px;height:22px;border:2px solid var(--border);border-top-color:var(--brand);border-radius:50%;animation:spin 0.7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .error-msg{background:#FCEBEB;color:#791F1F;border-radius:10px;padding:10px 14px;font-size:13px;margin-bottom:8px}
-.splash-wrap{background:#1B3060;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 32px;gap:24px}
-.splash-logo{width:140px;height:140px;object-fit:contain}
-.splash-tagline{font-size:14px;color:rgba(255,255,255,0.6);text-align:center;line-height:1.6}
-.splash-card{background:rgba(255,255,255,0.07);border-radius:16px;padding:24px;width:100%;display:flex;flex-direction:column;gap:12px}
-.splash-input{padding:11px 14px;border-radius:10px;border:none;font-size:14px;background:rgba(255,255,255,0.12);color:#fff;width:100%}
-.splash-input::placeholder{color:rgba(255,255,255,0.4)}
-.splash-input:focus{outline:none;background:rgba(255,255,255,0.18)}
-.splash-btn{padding:13px;border-radius:12px;border:none;font-size:15px;font-weight:500;cursor:pointer;text-align:center;width:100%}
-.splash-btn-primary{background:#fff;color:#1B3060}
-.splash-btn-outline{background:transparent;border:1px solid rgba(255,255,255,0.3);color:#fff}
-.splash-divider{text-align:center;font-size:12px;color:rgba(255,255,255,0.35)}
-.splash-footnote{font-size:12px;color:rgba(255,255,255,0.35);text-align:center}
-.splash-error{background:rgba(255,80,80,0.2);color:#ffaaaa;border-radius:8px;padding:8px 12px;font-size:13px}
+.empty-state{text-align:center;padding:48px 24px;display:flex;flex-direction:column;align-items:center;gap:12px}
+.empty-icon{width:56px;height:56px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:4px}
+.empty-title{font-size:16px;font-weight:500;color:var(--text1)}
+.empty-sub{font-size:13px;color:var(--text2);line-height:1.6;max-width:260px;text-align:center}
+.tooltip{font-size:11px;color:var(--text2);background:var(--surface3);border-radius:8px;padding:6px 10px;line-height:1.5;margin-top:4px}
+.checklist-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--border)}
+.checklist-item:last-child{border-bottom:none}
+.check-circle{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;color:var(--text1)}
+.check-circle.done{background:#3B6D11;border-color:#3B6D11;color:#fff}
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.bar-label{font-size:12px;color:var(--text2);width:90px;flex-shrink:0}
+.bar-track{flex:1;height:8px;background:var(--surface3);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px}
+.filter-bar{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+.filter-bar::-webkit-scrollbar{display:none}
+.filter-chip{padding:5px 14px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;border:0.5px solid var(--border);background:var(--surface);color:var(--text2)}
+.filter-chip.active{background:var(--brand);color:#fff;border-color:var(--brand)}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:900;display:flex;align-items:flex-end;justify-content:center}
+.modal{background:var(--surface);border-radius:20px 20px 0 0;padding:24px 20px calc(var(--safe-bottom) + 24px);width:100%;max-width:480px}
+.modal-title{font-size:17px;font-weight:500;color:var(--text1);margin-bottom:8px}
+.modal-sub{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:20px}
+.modal-actions{display:flex;flex-direction:column;gap:8px}
+.act-row{padding:10px 0;border-bottom:0.5px solid var(--border)}
+.act-row:last-child{border-bottom:none}
+.act-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px}
+.act-name{font-weight:500;font-size:13px;color:var(--text1)}
+.act-addr{font-size:12px;color:var(--text2);margin-bottom:2px}
+.act-meta{font-size:11px;color:var(--text3)}
 .stage-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;display:inline-block;margin-right:4px}
-.stage-active{background:#1B3060}
+.stage-active{background:var(--brand)}
 .stage-contract{background:#3B6D11}
 .stage-closed{background:#3B6D11}
 .stage-fallen{background:#A32D2D}
 .stage-pending{background:#BA7517}
-.empty-state{text-align:center;padding:32px 16px;display:flex;flex-direction:column;align-items:center;gap:12px}
-.empty-icon{width:56px;height:56px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:4px}
-.empty-title{font-size:16px;font-weight:500;color:#111}
-.empty-sub{font-size:13px;color:#888;line-height:1.6;max-width:260px;text-align:center}
-.tooltip{font-size:11px;color:#888;background:#f5f5f3;border-radius:8px;padding:6px 10px;line-height:1.5;margin-top:4px}
-.checklist-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid rgba(0,0,0,0.07);font-size:13px}
-.checklist-item:last-child{border-bottom:none}
-.check-circle{width:20px;height:20px;border-radius:50%;border:1.5px solid rgba(0,0,0,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px}
-.check-circle.done{background:#3B6D11;border-color:#3B6D11;color:#fff}
-.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-.bar-label{font-size:12px;color:#888;width:90px;flex-shrink:0}
-.bar-track{flex:1;height:8px;background:#f0f0ee;border-radius:4px;overflow:hidden}
-.bar-fill{height:100%;border-radius:4px}
-.filter-bar{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
-.filter-bar::-webkit-scrollbar{display:none}
-.filter-chip{padding:5px 12px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;border:0.5px solid rgba(0,0,0,0.15);background:#fff;color:#888}
-.filter-chip.active{background:#1B3060;color:#fff;border-color:#1B3060}
-.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.55);z-index:900;display:flex;align-items:flex-end;justify-content:center}
-.modal{background:#fff;border-radius:20px 20px 0 0;padding:24px 20px 32px;width:375px;max-width:100%}
-.modal-title{font-size:17px;font-weight:500;color:#111;margin-bottom:8px}
-.modal-sub{font-size:13px;color:#888;line-height:1.6;margin-bottom:20px}
-.modal-actions{display:flex;flex-direction:column;gap:8px}
-.act-row{padding:10px 0;border-bottom:0.5px solid rgba(0,0,0,0.07)}
-.act-row:last-child{border-bottom:none}
-.act-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px}
-.act-name{font-weight:500;font-size:13px;color:#111}
-.act-addr{font-size:12px;color:#888;margin-bottom:2px}
-.act-meta{font-size:11px;color:#aaa}
+
+/* ── Splash (login/signup) ── */
+.splash-wrap{min-height:100vh;background:var(--brand);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:calc(var(--safe-top) + 32px) 28px calc(var(--safe-bottom) + 32px);gap:20px}
+.splash-logo{width:120px;height:120px;object-fit:contain}
+.splash-tagline{font-size:14px;color:rgba(255,255,255,0.55);text-align:center}
+.splash-card{background:rgba(255,255,255,0.08);border-radius:16px;padding:20px;width:100%;max-width:340px;display:flex;flex-direction:column;gap:10px}
+.splash-input{padding:11px 14px;border-radius:10px;border:none;font-size:14px;background:rgba(255,255,255,0.12);color:#fff;width:100%}
+.splash-input::placeholder{color:rgba(255,255,255,0.38)}
+.splash-input:focus{outline:none;background:rgba(255,255,255,0.2)}
+.splash-btn{padding:13px;border-radius:12px;border:none;font-size:15px;font-weight:500;cursor:pointer;text-align:center;width:100%}
+.splash-btn-primary{background:#fff;color:var(--brand)}
+.splash-btn-outline{background:transparent;border:1px solid rgba(255,255,255,0.3);color:#fff}
+.splash-divider{text-align:center;font-size:12px;color:rgba(255,255,255,0.3)}
+.splash-footnote{font-size:12px;color:rgba(255,255,255,0.3);text-align:center}
+.splash-error{background:rgba(255,80,80,0.2);color:#ffaaaa;border-radius:8px;padding:8px 12px;font-size:13px}
 </style>
 </head>
 <body>
 <div id="toast" class="toast"></div>
 <div id="modal-root"></div>
-<div class="phone" id="app">
-  <div class="status-bar">
-    <span id="clock">9:41</span>
-    <span id="status-name" style="color:#1B3060;font-weight:500"></span>
+
+<div id="app">
+  <div id="app-header" class="hidden">
+    <div class="header-left">
+      <div class="header-title" id="h-title"></div>
+      <div class="header-sub" id="h-sub"></div>
+    </div>
+    <img src="/icons/icon-192.png" class="header-logo" alt="RealTrack"/>
   </div>
-  <div class="screen" id="screen">
+
+  <div id="screen">
     <div class="loading"><div class="spinner"></div>Loading...</div>
   </div>
-  <div class="nav-bar" id="nav" style="display:none">
+
+  <div id="nav" class="hidden">
     <div class="nav-item" onclick="navigate('dashboard')" id="nav-dashboard">
       <div class="nav-dot"></div>
-      <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="7" height="7" rx="2" fill="currentColor" opacity="0.7"/><rect x="11" y="2" width="7" height="7" rx="2" fill="currentColor" opacity="0.7"/><rect x="2" y="11" width="7" height="7" rx="2" fill="currentColor" opacity="0.7"/><rect x="11" y="11" width="7" height="7" rx="2" fill="currentColor" opacity="0.7"/></svg>
+      <div class="nav-icon">
+        <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="7" height="7" rx="2" fill="currentColor" opacity="0.8"/><rect x="11" y="2" width="7" height="7" rx="2" fill="currentColor" opacity="0.8"/><rect x="2" y="11" width="7" height="7" rx="2" fill="currentColor" opacity="0.8"/><rect x="11" y="11" width="7" height="7" rx="2" fill="currentColor" opacity="0.8"/></svg>
+      </div>
       <span class="nav-label">Dashboard</span>
     </div>
     <div class="nav-item" onclick="navigate('agents')" id="nav-agents">
       <div class="nav-dot"></div>
-      <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7" r="3.5" stroke="currentColor" stroke-width="1.5"/><path d="M3 17c0-3.866 3.134-7 7-7s7 3.134 7 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <div class="nav-icon">
+        <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7" r="3.5" stroke="currentColor" stroke-width="1.5"/><path d="M3 17c0-3.866 3.134-7 7-7s7 3.134 7 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </div>
       <span class="nav-label">Agents</span>
     </div>
     <div class="nav-item" onclick="navigate('clients')" id="nav-clients">
       <div class="nav-dot"></div>
-      <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><circle cx="7" cy="7" r="3" stroke="currentColor" stroke-width="1.5"/><circle cx="14" cy="8" r="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M1 17c0-3 2.686-5.5 6-5.5s6 2.5 6 5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M14.5 12.5c1.933 0 3.5 1.343 3.5 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <div class="nav-icon">
+        <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><circle cx="7" cy="7" r="3" stroke="currentColor" stroke-width="1.5"/><circle cx="14" cy="8" r="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M1 17c0-3 2.686-5.5 6-5.5s6 2.5 6 5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M14.5 12.5c1.933 0 3.5 1.343 3.5 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </div>
       <span class="nav-label">Clients</span>
     </div>
     <div class="nav-item" onclick="navigate('reports')" id="nav-reports">
       <div class="nav-dot"></div>
-      <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><rect x="2" y="10" width="3" height="8" rx="1" fill="currentColor" opacity="0.7"/><rect x="8" y="6" width="3" height="12" rx="1" fill="currentColor" opacity="0.7"/><rect x="14" y="2" width="3" height="16" rx="1" fill="currentColor" opacity="0.7"/></svg>
+      <div class="nav-icon">
+        <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><rect x="2" y="10" width="3" height="8" rx="1" fill="currentColor" opacity="0.8"/><rect x="8" y="6" width="3" height="12" rx="1" fill="currentColor" opacity="0.8"/><rect x="14" y="2" width="3" height="16" rx="1" fill="currentColor" opacity="0.8"/></svg>
+      </div>
       <span class="nav-label">Reports</span>
     </div>
     <div class="nav-item" onclick="navigate('account')" id="nav-account">
       <div class="nav-dot"></div>
-      <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7" r="3.5" stroke="currentColor" stroke-width="1.5"/><path d="M3 17c0-3.866 3.134-7 7-7s7 3.134 7 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <div class="nav-icon">
+        <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7" r="3.5" stroke="currentColor" stroke-width="1.5"/><path d="M3 17c0-3.866 3.134-7 7-7s7 3.134 7 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </div>
       <span class="nav-label">Account</span>
     </div>
   </div>
 </div>
+
 <script>
 var SUPA_URL  = 'https://bylkcfoqoehkgiiqscvl.supabase.co';
 var SUPA_ANON = 'sb_publishable_NkpWB9_qksTM-Kdqe7rJkg_OphNN-IL';
@@ -231,25 +277,30 @@ var noNavScreens = [
   'upgrade','activity-log'
 ];
 
-function updateClock() {
-  var n = new Date();
-  document.getElementById('clock').textContent =
-    n.getHours().toString().padStart(2,'0') + ':' +
-    n.getMinutes().toString().padStart(2,'0');
-}
-updateClock();
-setInterval(updateClock, 10000);
+var screenTitles = {
+  dashboard:      ['Dashboard', ''],
+  agents:         ['Agents', ''],
+  clients:        ['Clients', ''],
+  reports:        ['Reports', 'Activity summary'],
+  account:        ['Account', ''],
+  'agent-detail': ['Agent detail', ''],
+  'client-detail':['Client detail', ''],
+  'add-agent':    ['New agent', ''],
+  'add-client':   ['New client', ''],
+  'add-visit':    ['Log visit', ''],
+  'add-offer':    ['Log offer', ''],
+  'upgrade':      ['Upgrade to Pro', ''],
+  'activity-log': ['Activity log', '']
+};
 
-function updateStatusName() {
-  var el = document.getElementById('status-name');
-  if (!el) return;
-  if (currentProfile && currentProfile.full_name) {
-    el.textContent = currentProfile.full_name;
-  } else if (currentUser && currentUser.email) {
-    el.textContent = currentUser.email.split('@')[0];
-  } else {
-    el.textContent = '';
-  }
+function setHeader(name, dynamicSub) {
+  var isAuthScreen = name === 'login' || name === 'signup';
+  var hdr = document.getElementById('app-header');
+  if (isAuthScreen) { hdr.classList.add('hidden'); return; }
+  hdr.classList.remove('hidden');
+  var t = screenTitles[name] || [name, ''];
+  document.getElementById('h-title').textContent = t[0];
+  document.getElementById('h-sub').textContent   = dynamicSub || t[1];
 }
 
 function toast(msg, dur) {
@@ -292,10 +343,7 @@ function categoryBadge(cat) {
 }
 
 function stageColor(stage) {
-  var map = {
-    'Active':'stage-active','Under Contract':'stage-contract',
-    'Closed':'stage-closed','Fallen Through':'stage-fallen','Pending':'stage-pending'
-  };
+  var map = { 'Active':'stage-active','Under Contract':'stage-contract','Closed':'stage-closed','Fallen Through':'stage-fallen','Pending':'stage-pending' };
   return map[stage] || 'stage-active';
 }
 
@@ -328,11 +376,14 @@ function spinner() {
 async function navigate(name, data) {
   closeModal();
   var isNav = noNavScreens.indexOf(name) === -1;
-  document.getElementById('nav').style.display = isNav ? 'flex' : 'none';
+  var nav = document.getElementById('nav');
+  nav.classList.toggle('hidden', !isNav);
   document.querySelectorAll('.nav-item').forEach(function(el) { el.classList.remove('active'); });
   var navEl = document.getElementById('nav-' + name);
   if (navEl) navEl.classList.add('active');
   document.getElementById('screen').innerHTML = spinner();
+  document.getElementById('screen').scrollTop = 0;
+
   var html = '';
   if      (name === 'login')          html = screenLogin();
   else if (name === 'signup')         html = screenSignup();
@@ -349,7 +400,14 @@ async function navigate(name, data) {
   else if (name === 'add-offer')      html = screenAddOffer(data);
   else if (name === 'upgrade')        html = screenUpgrade();
   else if (name === 'account')        html = screenAccount();
+
   document.getElementById('screen').innerHTML = html;
+  setHeader(name, null);
+}
+
+function setDynamicHeader(title, sub) {
+  document.getElementById('h-title').textContent = title || '';
+  document.getElementById('h-sub').textContent   = sub   || '';
 }
 
 // ── Auth ───────────────────────────────────────────────────────
@@ -381,18 +439,14 @@ function screenSignup() {
     + '<button class="splash-btn splash-btn-primary" onclick="doSignup()">Create account</button>'
     + '<div class="splash-divider">&#8212; Already have an account? &#8212;</div>'
     + '<button class="splash-btn splash-btn-outline" onclick="navigate(\'login\')">Back to sign in</button>'
-    + '</div>'
-    + '</div>';
+    + '</div></div>';
 }
 
 async function doLogin() {
   var email = document.getElementById('l-email').value.trim();
   var pass  = document.getElementById('l-pass').value;
   var r = await sb.auth.signInWithPassword({ email: email, password: pass });
-  if (r.error) {
-    document.getElementById('login-error').innerHTML = '<div class="splash-error">' + r.error.message + '</div>';
-    return;
-  }
+  if (r.error) { document.getElementById('login-error').innerHTML = '<div class="splash-error">' + r.error.message + '</div>'; return; }
   await afterAuth(r.data.user);
 }
 
@@ -415,16 +469,13 @@ async function afterAuth(user) {
   currentUser = user;
   var r = await sb.from('profiles').select('*').eq('id', user.id).single();
   currentProfile = r.data || { tier: 'free' };
-  updateStatusName();
   navigate('dashboard');
 }
 
 async function doLogout() {
   await sb.auth.signOut();
-  currentUser = null;
-  currentProfile = null;
-  document.getElementById('nav').style.display = 'none';
-  document.getElementById('status-name').textContent = '';
+  currentUser = null; currentProfile = null;
+  document.getElementById('nav').classList.add('hidden');
   navigate('login');
 }
 
@@ -447,30 +498,36 @@ async function screenDashboard() {
   var closedDeals = deals.filter(function(d) { return d.stage === 'Closed'; }).length;
   var flagged     = clients.filter(function(c) { return c.flag_reason; });
   var tier        = (currentProfile && currentProfile.tier) || 'free';
-  var displayName = (currentProfile && currentProfile.full_name)
-                    || (currentUser.email ? currentUser.email.split('@')[0] : 'there');
-  var hasAgents  = agents.length > 0;
-  var hasClients = clients.length > 0;
-  var hasDeals   = deals.length > 0;
-  var html = '<div class="header"><h1>Hi, ' + displayName + '</h1><p>Here is your activity snapshot</p></div><div class="content">';
+  var displayName = (currentProfile && currentProfile.full_name) || (currentUser.email ? currentUser.email.split('@')[0] : 'there');
+  var hasAgents   = agents.length > 0;
+  var hasClients  = clients.length > 0;
+  var hasDeals    = deals.length > 0;
+
+  setDynamicHeader('Hi, ' + displayName, 'Here is your activity snapshot');
+
+  var html = '<div class="content">';
+
   if (tier === 'free') {
     html += '<div class="free-tier"><span class="free-tier-label">Free &#8212; ' + agents.length + '/5 agents, ' + clients.length + '/5 clients</span>'
           + '<button class="upgrade-btn" onclick="navigate(\'upgrade\')">Upgrade</button></div>';
   }
+
   if (!hasAgents || !hasClients || !hasDeals) {
     html += '<div class="card"><div class="section-label">Getting started</div>'
-          + '<div style="font-size:12px;color:#888;margin-bottom:10px">Complete these steps to get the most out of RealTrack.</div>'
+          + '<div style="font-size:12px;color:var(--text2);margin-bottom:10px">Complete these steps to get the most out of RealTrack.</div>'
           + checklistItem('Add your first agent',  'Track agents you work with on deals',         hasAgents,  'navigate(\'add-agent\')')
           + checklistItem('Add your first client', 'Log a buyer or seller you are working with',  hasClients, 'navigate(\'add-client\')')
           + checklistItem('Log a deal or offer',   'Record an active deal to track its progress', hasDeals,   'navigate(\'add-offer\',null)')
           + '</div>';
   }
+
   html += '<div class="metric-grid">'
         + '<div class="metric"><div class="metric-label">Active deals</div><div class="metric-value">' + activeDeals + '</div></div>'
         + '<div class="metric"><div class="metric-label">Visits this month</div><div class="metric-value warn">' + thisMonth + '</div></div>'
         + '<div class="metric"><div class="metric-label">Flagged clients</div><div class="metric-value danger">' + flagged.length + '</div></div>'
         + '<div class="metric"><div class="metric-label">Closed (all time)</div><div class="metric-value good">' + closedDeals + '</div></div>'
         + '</div>';
+
   if (flagged.length > 0) {
     html += '<div class="card"><div class="section-label">Flagged clients</div>'
           + '<div class="tooltip">Auto-flagged when visit count is high relative to offers made.</div><div style="margin-top:8px">';
@@ -482,6 +539,7 @@ async function screenDashboard() {
     });
     html += '</div></div>';
   }
+
   var actRes = await Promise.all([
     sb.from('visits').select('visit_date,address,outcome,client_id').eq('user_id', uid).order('visit_date', { ascending: false }).limit(10),
     sb.from('deals').select('id,address,client_id').eq('user_id', uid)
@@ -512,14 +570,15 @@ async function screenDashboard() {
   });
   activity.sort(function(a, b) { return b.date.localeCompare(a.date); });
   activity = activity.slice(0, 10);
+
   if (activity.length) {
     html += '<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
           + '<div class="section-label" style="margin-bottom:0">Recent activity</div>'
-          + '<span style="font-size:12px;color:#1B3060;cursor:pointer" onclick="navigate(\'activity-log\')">View all &#8250;</span></div>';
+          + '<span style="font-size:12px;color:var(--brand);cursor:pointer" onclick="navigate(\'activity-log\')">View all &#8250;</span></div>';
     activity.forEach(function(a) {
       var icon = a.type === 'visit'
         ? '<div style="width:28px;height:28px;border-radius:8px;background:#E1F5EE;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">&#128205;</div>'
-        : '<div style="width:28px;height:28px;border-radius:8px;background:#E8EDF7;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">&#128181;</div>';
+        : '<div style="width:28px;height:28px;border-radius:8px;background:var(--brand-light);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">&#128181;</div>';
       var cName = a.clientId ? (clientNameMap[a.clientId] || 'Unknown') : '&#8212;';
       html += '<div class="list-item" style="cursor:default">' + icon
             + '<div class="item-info"><div class="item-name" style="font-size:13px">' + cName + ' &#8212; ' + a.address + '</div>'
@@ -527,6 +586,7 @@ async function screenDashboard() {
     });
     html += '</div>';
   }
+
   html += '</div>';
   return html;
 }
@@ -536,7 +596,7 @@ function checklistItem(title, sub, done, action) {
   return '<div class="checklist-item"' + clickAttr + '>'
        + '<div class="check-circle' + (done ? ' done' : '') + '">' + (done ? '&#10003;' : '') + '</div>'
        + '<div class="item-info"><div class="item-name" style="font-size:13px">' + title + '</div><div class="item-sub">' + sub + '</div></div>'
-       + (!done ? '<div style="color:#1B3060;font-size:16px">&#8250;</div>' : '')
+       + (!done ? '<div style="color:var(--brand);font-size:16px">&#8250;</div>' : '')
        + '</div>';
 }
 
@@ -570,13 +630,15 @@ async function screenActivityLog() {
     offers.sort(function(a, b) { return a.offer_date.localeCompare(b.offer_date); });
   }
   var total = allVisits.length + allOffers.length;
-  var html = '<div class="header"><h1>Activity log</h1><p>' + total + ' total events</p></div><div class="content">';
+  setDynamicHeader('Activity log', total + ' total events');
+  var html = '<div class="content">';
+  html += '<span class="back-btn" onclick="navigate(\'dashboard\')">&#8592; Back to dashboard</span>';
   html += '<div style="display:flex;gap:8px">'
-        + '<select style="flex:1;padding:7px 10px;border-radius:8px;border:0.5px solid rgba(0,0,0,0.15);font-size:12px;background:#fff" onchange="alSort=this.value;navigate(\'activity-log\')">'
+        + '<select style="flex:1;padding:7px 10px;border-radius:8px;border:0.5px solid var(--border);font-size:12px;background:var(--surface);color:var(--text1)" onchange="alSort=this.value;navigate(\'activity-log\')">'
         + '<option value="date-desc"' + (alSort === 'date-desc' ? ' selected' : '') + '>Newest first</option>'
         + '<option value="date-asc"'  + (alSort === 'date-asc'  ? ' selected' : '') + '>Oldest first</option>'
         + '</select>'
-        + '<select style="flex:1;padding:7px 10px;border-radius:8px;border:0.5px solid rgba(0,0,0,0.15);font-size:12px;background:#fff" onchange="alClient=this.value;navigate(\'activity-log\')">'
+        + '<select style="flex:1;padding:7px 10px;border-radius:8px;border:0.5px solid var(--border);font-size:12px;background:var(--surface);color:var(--text1)" onchange="alClient=this.value;navigate(\'activity-log\')">'
         + clientOptions + '</select></div>';
   html += '<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
         + '<div class="section-label" style="margin-bottom:0">Visits (' + visits.length + ')</div>'
@@ -591,11 +653,11 @@ async function screenActivityLog() {
             + '<div class="act-addr">' + v.address + '</div>'
             + '<div class="act-meta">' + v.visit_date + np + '</div></div>';
     });
-  } else { html += '<div style="font-size:13px;color:#aaa;padding:8px 0">No visits match this filter.</div>'; }
+  } else { html += '<div style="font-size:13px;color:var(--text3);padding:8px 0">No visits match this filter.</div>'; }
   html += '</div>';
   html += '<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
         + '<div class="section-label" style="margin-bottom:0">Offers (' + offers.length + ')</div>'
-        + '<div style="width:28px;height:28px;border-radius:8px;background:#E8EDF7;display:flex;align-items:center;justify-content:center;font-size:13px">&#128181;</div></div>';
+        + '<div style="width:28px;height:28px;border-radius:8px;background:var(--brand-light);display:flex;align-items:center;justify-content:center;font-size:13px">&#128181;</div></div>';
   if (offers.length) {
     offers.forEach(function(o) {
       var d = dealMap[o.deal_id];
@@ -609,10 +671,8 @@ async function screenActivityLog() {
             + '<div class="act-addr">' + addr + '</div>'
             + '<div class="act-meta">' + o.offer_date + ' &middot; ' + dir + np + '</div></div>';
     });
-  } else { html += '<div style="font-size:13px;color:#aaa;padding:8px 0">No offers match this filter.</div>'; }
-  html += '</div>';
-  html += '<span class="back-btn" onclick="navigate(\'dashboard\')">&#8592; Back to dashboard</span>';
-  html += '</div>';
+  } else { html += '<div style="font-size:13px;color:var(--text3);padding:8px 0">No offers match this filter.</div>'; }
+  html += '</div></div>';
   return html;
 }
 
@@ -621,9 +681,10 @@ async function screenAgents() {
   var r = await sb.from('agents').select('*').eq('user_id', currentUser.id).is('archived_at', null).order('full_name');
   if (r.error) return '<div class="content"><div class="error-msg">' + r.error.message + '</div></div>';
   var all = r.data || [];
+  setDynamicHeader('Agents', all.length ? all.length + ' tracked' : '');
   if (!all.length) {
-    return '<div class="header"><h1>Agents</h1></div><div class="content"><div class="empty-state">'
-         + '<div class="empty-icon" style="background:#E8EDF7">&#128100;</div>'
+    return '<div class="content"><div class="empty-state">'
+         + '<div class="empty-icon" style="background:var(--brand-light)">&#128100;</div>'
          + '<div class="empty-title">No agents yet</div>'
          + '<div class="empty-sub">Add the agents you work with on deals. Rate them, tag patterns, and build a history you can rely on.</div>'
          + '<button class="btn btn-primary" style="width:auto;padding:10px 24px" onclick="navigate(\'add-agent\')">+ Add your first agent</button>'
@@ -633,9 +694,9 @@ async function screenAgents() {
   if (agentSort === 'rating-hi')      filtered.sort(function(a, b) { return b.rating - a.rating; });
   else if (agentSort === 'rating-lo') filtered.sort(function(a, b) { return a.rating - b.rating; });
   else filtered.sort(function(a, b) { return a.full_name.localeCompare(b.full_name); });
-  var html = '<div class="header"><h1>Agents</h1><p>' + all.length + ' tracked</p></div><div class="content">';
-  html += '<div style="display:flex;gap:6px">'
-        + '<select onchange="agentSort=this.value;navigate(\'agents\')" style="flex:1;padding:6px 10px;border-radius:8px;border:0.5px solid rgba(0,0,0,0.15);font-size:12px;background:#fff">'
+  var html = '<div class="content">';
+  html += '<div style="display:flex;gap:8px">'
+        + '<select onchange="agentSort=this.value;navigate(\'agents\')" style="flex:1;padding:7px 10px;border-radius:8px;border:0.5px solid var(--border);font-size:12px;background:var(--surface);color:var(--text1)">'
         + '<option value="name"'      + (agentSort === 'name'      ? ' selected' : '') + '>Sort: Name</option>'
         + '<option value="rating-hi"' + (agentSort === 'rating-hi' ? ' selected' : '') + '>Sort: Highest rated</option>'
         + '<option value="rating-lo"' + (agentSort === 'rating-lo' ? ' selected' : '') + '>Sort: Lowest rated</option>'
@@ -646,7 +707,7 @@ async function screenAgents() {
   });
   html += '</div>';
   if (!filtered.length) {
-    html += '<div style="text-align:center;padding:24px;font-size:13px;color:#aaa">No agents in this category.</div>';
+    html += '<div style="text-align:center;padding:24px;font-size:13px;color:var(--text3)">No agents in this category.</div>';
   } else {
     html += '<div class="card">';
     filtered.forEach(function(a) {
@@ -670,25 +731,27 @@ async function screenAgentDetail(agentId) {
   ]);
   var agent = res[0].data; var tags = res[1].data || []; var deals = res[2].data || [];
   if (!agent) return '<div class="content"><div class="error-msg">Agent not found</div></div>';
+  setDynamicHeader(agent.full_name, agent.brokerage || '');
   var safeName = agent.full_name.replace(/'/g, '');
-  var html = '<div class="detail-hero">'
+  var html = '<div class="content">'
+           + '<span class="back-btn" onclick="navigate(\'agents\')">&#8592; Back</span>'
+           + '<div class="detail-hero" style="border-radius:14px;margin:-4px 0 0">'
            + '<div class="avatar ' + avColor(agent.full_name) + '" style="width:52px;height:52px;font-size:16px">' + initials(agent.full_name) + '</div>'
-           + '<div><div style="font-size:17px;font-weight:500">' + agent.full_name + '</div>'
-           + '<div style="font-size:13px;color:#888">' + (agent.brokerage || '&#8212;') + '</div>'
+           + '<div><div style="font-size:17px;font-weight:500;color:var(--text1)">' + agent.full_name + '</div>'
+           + '<div style="font-size:13px;color:var(--text2)">' + (agent.brokerage || '&#8212;') + '</div>'
            + '<div class="stars" style="margin-top:4px">' + starStr(agent.rating) + '</div></div></div>'
-           + '<div class="content"><span class="back-btn" onclick="navigate(\'agents\')">&#8592; Back</span>'
            + '<div class="card"><div class="section-label">Category &amp; tags</div>' + categoryBadge(agent.category)
            + '<div class="tooltip" style="margin-top:8px">Categories help you assess before entering a deal. Tags capture specific patterns.</div>'
-           + '<div style="margin-top:8px">' + (tags.length ? tags.map(function(t) { return '<span class="tag">' + t.tag + '</span>'; }).join('') : '<span style="font-size:12px;color:#aaa">No tags added</span>') + '</div></div>';
-  if (agent.notes) html += '<div class="card"><div class="section-label">Notes</div><div style="font-size:13px;line-height:1.6">' + agent.notes + '</div></div>';
+           + '<div style="margin-top:8px">' + (tags.length ? tags.map(function(t) { return '<span class="tag">' + t.tag + '</span>'; }).join('') : '<span style="font-size:12px;color:var(--text3)">No tags added</span>') + '</div></div>';
+  if (agent.notes) html += '<div class="card"><div class="section-label">Notes</div><div style="font-size:13px;line-height:1.6;color:var(--text1)">' + agent.notes + '</div></div>';
   html += '<div class="card"><div class="section-label">Deal history (' + deals.length + ')</div>';
   if (deals.length) {
     deals.forEach(function(d) {
-      html += '<div class="deal-row"><div><div style="font-weight:500">' + d.address + '</div>'
-            + '<div style="margin-top:4px"><span class="stage-dot ' + stageColor(d.stage) + '"></span><span style="font-size:12px;color:#888">' + d.stage + '</span></div></div>'
-            + '<div style="font-weight:500">' + fmt(d.our_offer || d.their_offer) + '</div></div>';
+      html += '<div class="deal-row"><div><div style="font-weight:500;color:var(--text1)">' + d.address + '</div>'
+            + '<div style="margin-top:4px"><span class="stage-dot ' + stageColor(d.stage) + '"></span><span style="font-size:12px;color:var(--text2)">' + d.stage + '</span></div></div>'
+            + '<div style="font-weight:500;color:var(--text1)">' + fmt(d.our_offer || d.their_offer) + '</div></div>';
     });
-  } else { html += '<div class="empty-state" style="padding:16px 0"><div style="font-size:13px;color:#aaa">No deals logged with this agent yet.</div></div>'; }
+  } else { html += '<div style="font-size:13px;color:var(--text3);padding:8px 0">No deals logged with this agent yet.</div>'; }
   html += '</div><div style="display:flex;gap:8px">'
         + '<button class="btn" style="flex:1;color:#BA7517;border-color:#BA7517" onclick="confirmArchiveAgent(\'' + agentId + '\',\'' + safeName + '\')">Archive</button>'
         + '<button class="btn btn-danger" style="flex:1" onclick="confirmDeleteAgent(\'' + agentId + '\',\'' + safeName + '\')">Delete</button>'
@@ -719,8 +782,9 @@ async function screenClients() {
   var r = await sb.from('clients').select('*').eq('user_id', currentUser.id).is('archived_at', null).order('full_name');
   if (r.error) return '<div class="content"><div class="error-msg">' + r.error.message + '</div></div>';
   var all = r.data || [];
+  setDynamicHeader('Clients', all.length ? all.length + ' tracked' : '');
   if (!all.length) {
-    return '<div class="header"><h1>Clients</h1></div><div class="content"><div class="empty-state">'
+    return '<div class="content"><div class="empty-state">'
          + '<div class="empty-icon" style="background:#E1F5EE">&#128101;</div>'
          + '<div class="empty-title">No clients yet</div>'
          + '<div class="empty-sub">Add buyers and sellers you are working with. RealTrack automatically flags clients with high visit counts or unrealistic offer patterns.</div>'
@@ -733,14 +797,14 @@ async function screenClients() {
     if (clientFilter === 'Good')     return !c.flag_reason && !c.retainer_required;
     return true;
   });
-  var html = '<div class="header"><h1>Clients</h1><p>' + all.length + ' tracked</p></div><div class="content">';
+  var html = '<div class="content">';
   html += '<div class="filter-bar">';
   [{ k:'All', l:'All' }, { k:'Good', l:'Good standing' }, { k:'Flagged', l:'Flagged' }, { k:'Retainer', l:'Retainer req.' }].forEach(function(f) {
     html += '<div class="filter-chip' + (clientFilter === f.k ? ' active' : '') + '" onclick="clientFilter=\'' + f.k + '\';navigate(\'clients\')">' + f.l + '</div>';
   });
   html += '</div>';
   if (!filtered.length) {
-    html += '<div style="text-align:center;padding:24px;font-size:13px;color:#aaa">No clients in this category.</div>';
+    html += '<div style="text-align:center;padding:24px;font-size:13px;color:var(--text3)">No clients in this category.</div>';
   } else {
     html += '<div class="card">';
     filtered.forEach(function(c) {
@@ -772,13 +836,10 @@ async function screenClientDetail(clientId) {
   deals.forEach(function(d) { if (d.offers) allOffers = allOffers.concat(d.offers); });
   var visitCount = visits.length;
   var visitPct   = Math.min(visitCount / 10 * 100, 100);
-  var visitColor = visitCount > 6 ? '#A32D2D' : visitCount > 3 ? '#BA7517' : '#1B3060';
+  var visitColor = visitCount > 6 ? '#A32D2D' : visitCount > 3 ? '#BA7517' : 'var(--brand)';
   var safeName   = client.full_name.replace(/'/g, '');
-  var html = '<div class="detail-hero">'
-           + '<div class="avatar ' + avColor(client.full_name) + '" style="width:52px;height:52px;font-size:16px">' + initials(client.full_name) + '</div>'
-           + '<div><div style="font-size:17px;font-weight:500">' + client.full_name + '</div>'
-           + '<div style="font-size:13px;color:#888">' + visitCount + ' visits &middot; ' + allOffers.length + ' offers</div></div></div>'
-           + '<div class="content"><span class="back-btn" onclick="navigate(\'clients\')">&#8592; Back</span>';
+  setDynamicHeader(client.full_name, visitCount + ' visits &middot; ' + allOffers.length + ' offers');
+  var html = '<div class="content"><span class="back-btn" onclick="navigate(\'clients\')">&#8592; Back</span>';
   if (client.retainer_required) html += '<div class="retainer-badge">&#9888; Retainer fee required &#8212; upfront commitment needed before further showings.</div>';
   if (client.flag_reason)       html += '<div class="flag-banner">&#9873; <strong>Auto-flagged:</strong> ' + client.flag_reason + '. Review history before scheduling more showings.</div>';
   html += '<div class="card"><div class="section-label">Visit activity</div>'
@@ -786,34 +847,34 @@ async function screenClientDetail(clientId) {
         + '<div class="tooltip">Turns amber at 4+ visits, red at 7+.</div><div style="margin-top:10px">';
   if (visits.length) {
     visits.slice(0, 5).forEach(function(v) {
-      html += '<div class="deal-row"><span style="color:#888">' + v.visit_date + '</span><span style="font-weight:500;font-size:12px">' + v.address + '</span></div>';
+      html += '<div class="deal-row"><span style="color:var(--text2)">' + v.visit_date + '</span><span style="font-weight:500;font-size:12px;color:var(--text1)">' + v.address + '</span></div>';
     });
-  } else { html += '<div style="font-size:13px;color:#aaa;padding:8px 0">No visits logged yet.</div>'; }
+  } else { html += '<div style="font-size:13px;color:var(--text3);padding:8px 0">No visits logged yet.</div>'; }
   html += '</div></div>';
   html += '<div class="card"><div class="section-label">Deals &amp; offers (' + deals.length + ')</div>';
   if (deals.length) {
     deals.forEach(function(d) {
       var agentOpts = '<option value="">No agent linked</option>';
       agentList.forEach(function(a) { agentOpts += '<option value="' + a.id + '"' + (d.agent_id === a.id ? ' selected' : '') + '>' + a.full_name + '</option>'; });
-      html += '<div style="padding:10px 0;border-bottom:0.5px solid rgba(0,0,0,0.07)">'
-            + '<div style="font-weight:500;font-size:13px;margin-bottom:6px">' + d.address + '</div>'
+      html += '<div style="padding:10px 0;border-bottom:0.5px solid var(--border)">'
+            + '<div style="font-weight:500;font-size:13px;margin-bottom:6px;color:var(--text1)">' + d.address + '</div>'
             + '<div style="display:flex;gap:6px;margin-bottom:6px">'
-            + '<select style="flex:1;padding:5px 8px;border-radius:8px;border:0.5px solid rgba(0,0,0,0.15);font-size:12px;background:#fff" onchange="updateDealStage(\'' + d.id + '\',this.value)">'
+            + '<select style="flex:1;padding:5px 8px;border-radius:8px;border:0.5px solid var(--border);font-size:12px;background:var(--surface);color:var(--text1)" onchange="updateDealStage(\'' + d.id + '\',this.value)">'
             + ['Active','Under Contract','Closed','Fallen Through','Pending'].map(function(s) { return '<option' + (d.stage === s ? ' selected' : '') + '>' + s + '</option>'; }).join('')
             + '</select>'
-            + '<select style="flex:1;padding:5px 8px;border-radius:8px;border:0.5px solid rgba(0,0,0,0.15);font-size:12px;background:#fff" onchange="updateDealAgent(\'' + d.id + '\',this.value)">'
+            + '<select style="flex:1;padding:5px 8px;border-radius:8px;border:0.5px solid var(--border);font-size:12px;background:var(--surface);color:var(--text1)" onchange="updateDealAgent(\'' + d.id + '\',this.value)">'
             + agentOpts + '</select></div>';
       var dealOffers = d.offers || [];
       dealOffers.forEach(function(o) {
         var sc = o.status === 'Accepted' ? 'badge-green' : o.status === 'Rejected' ? 'badge-red' : 'badge-gray';
-        html += '<div class="deal-row"><span style="color:#888">' + o.offer_date + ' &middot; ' + o.direction + '</span>'
-              + '<span>' + fmt(o.amount) + ' <span class="item-badge ' + sc + '">' + o.status + '</span></span></div>';
+        html += '<div class="deal-row"><span style="color:var(--text2)">' + o.offer_date + ' &middot; ' + o.direction + '</span>'
+              + '<span style="color:var(--text1)">' + fmt(o.amount) + ' <span class="item-badge ' + sc + '">' + o.status + '</span></span></div>';
       });
       html += '</div>';
     });
-  } else { html += '<div style="font-size:13px;color:#aaa;padding:8px 0">No offers logged yet.</div>'; }
+  } else { html += '<div style="font-size:13px;color:var(--text3);padding:8px 0">No offers logged yet.</div>'; }
   html += '</div>';
-  if (client.notes) html += '<div class="card"><div class="section-label">Notes</div><div style="font-size:13px;line-height:1.6">' + client.notes + '</div></div>';
+  if (client.notes) html += '<div class="card"><div class="section-label">Notes</div><div style="font-size:13px;line-height:1.6;color:var(--text1)">' + client.notes + '</div></div>';
   html += '<div style="display:flex;gap:8px">'
         + '<button class="btn" style="flex:1" onclick="navigate(\'add-visit\',\'' + clientId + '\')">Log visit</button>'
         + '<button class="btn" style="flex:1" onclick="navigate(\'add-offer\',\'' + clientId + '\')">Log offer</button></div>';
@@ -892,22 +953,22 @@ async function screenReports() {
   var accepted = sent.filter(function(o) { return o.status === 'Accepted'; }).length;
   var rejected = sent.filter(function(o) { return o.status === 'Rejected'; }).length;
   var rate     = sent.length ? Math.round(accepted / sent.length * 100) : 0;
-  var stageColors = { 'Active':'#1B3060','Under Contract':'#3B6D11','Closed':'#3B6D11','Fallen Through':'#A32D2D','Pending':'#BA7517' };
-  var html = '<div class="header"><h1>Reports</h1><p>Activity summary</p></div><div class="content">';
+  var stageColors = { 'Active':'var(--brand)','Under Contract':'#3B6D11','Closed':'#3B6D11','Fallen Through':'#A32D2D','Pending':'#BA7517' };
+  var html = '<div class="content">';
   html += '<div class="card"><div class="section-label">Deal pipeline</div>';
   Object.keys(stages).forEach(function(s) {
     var pct = Math.round(stages[s] / totalDeals * 100);
-    html += '<div class="bar-row"><div class="bar-label">' + s + '</div><div class="bar-track"><div class="bar-fill" style="width:' + pct + '%;background:' + (stageColors[s] || '#888') + '"></div></div><div style="font-size:12px;color:#888;width:20px;text-align:right">' + stages[s] + '</div></div>';
+    html += '<div class="bar-row"><div class="bar-label">' + s + '</div><div class="bar-track"><div class="bar-fill" style="width:' + pct + '%;background:' + (stageColors[s] || '#888') + '"></div></div><div style="font-size:12px;color:var(--text2);width:20px;text-align:right">' + stages[s] + '</div></div>';
   });
   html += '</div><div class="card"><div class="section-label">Client health</div>';
   [{ label:'Good standing', count:goodClients, color:'#3B6D11' }, { label:'Flagged', count:flaggedClients, color:'#BA7517' }, { label:'Retainer req.', count:retainerClients, color:'#A32D2D' }].forEach(function(item) {
     var pct = Math.round(item.count / totalClients * 100);
-    html += '<div class="bar-row"><div class="bar-label">' + item.label + '</div><div class="bar-track"><div class="bar-fill" style="width:' + pct + '%;background:' + item.color + '"></div></div><div style="font-size:12px;color:#888;width:20px;text-align:right">' + item.count + '</div></div>';
+    html += '<div class="bar-row"><div class="bar-label">' + item.label + '</div><div class="bar-track"><div class="bar-fill" style="width:' + pct + '%;background:' + item.color + '"></div></div><div style="font-size:12px;color:var(--text2);width:20px;text-align:right">' + item.count + '</div></div>';
   });
   html += '</div><div class="card"><div class="section-label">Visits &#8212; last 4 months</div>';
   Object.keys(monthCounts).forEach(function(month) {
     var pct = Math.round(monthCounts[month] / maxVisits * 100);
-    html += '<div class="bar-row"><div class="bar-label">' + month + '</div><div class="bar-track"><div class="bar-fill" style="width:' + pct + '%;background:#1B3060"></div></div><div style="font-size:12px;color:#888;width:20px;text-align:right">' + monthCounts[month] + '</div></div>';
+    html += '<div class="bar-row"><div class="bar-label">' + month + '</div><div class="bar-track"><div class="bar-fill" style="width:' + pct + '%;background:var(--brand)"></div></div><div style="font-size:12px;color:var(--text2);width:20px;text-align:right">' + monthCounts[month] + '</div></div>';
   });
   html += '</div><div class="card"><div class="section-label">Offer outcomes</div><div class="metric-grid">'
         + '<div class="metric"><div class="metric-label">Offers sent</div><div class="metric-value">' + sent.length + '</div></div>'
@@ -920,7 +981,7 @@ async function screenReports() {
 
 // ── Add Agent ──────────────────────────────────────────────────
 function screenAddAgent() {
-  return '<div class="header"><h1>New agent</h1></div><div class="content">'
+  return '<div class="content">'
     + '<span class="back-btn" onclick="navigate(\'agents\')">&#8592; Cancel</span><div id="add-error"></div>'
     + '<div class="card">'
     + '<div class="input-group"><label>Full name *</label><input id="a-name" placeholder="Sandra Lee"/></div>'
@@ -949,7 +1010,7 @@ async function saveAgent() {
 
 // ── Add Client ─────────────────────────────────────────────────
 function screenAddClient() {
-  return '<div class="header"><h1>New client</h1></div><div class="content">'
+  return '<div class="content">'
     + '<span class="back-btn" onclick="navigate(\'clients\')">&#8592; Cancel</span><div id="add-error"></div>'
     + '<div class="card">'
     + '<div class="input-group"><label>Full name *</label><input id="c-name" placeholder="James Holbrook"/></div>'
@@ -973,7 +1034,7 @@ async function saveClient() {
 // ── Add Visit ──────────────────────────────────────────────────
 function screenAddVisit(clientId) {
   var today = new Date().toISOString().split('T')[0];
-  return '<div class="header"><h1>Log visit</h1></div><div class="content">'
+  return '<div class="content">'
     + '<span class="back-btn" onclick="navigate(\'client-detail\',\'' + clientId + '\')">&#8592; Cancel</span><div id="add-error"></div>'
     + '<div class="card">'
     + '<div class="input-group"><label>Address *</label><input id="v-addr" placeholder="142 Maple St"/></div>'
@@ -995,7 +1056,7 @@ async function saveVisit(clientId) {
 function screenAddOffer(clientId) {
   var today = new Date().toISOString().split('T')[0];
   var backNav = clientId ? 'navigate(\'client-detail\',\'' + clientId + '\')' : 'navigate(\'clients\')';
-  return '<div class="header"><h1>Log offer</h1></div><div class="content">'
+  return '<div class="content">'
     + '<span class="back-btn" onclick="' + backNav + '">&#8592; Cancel</span><div id="add-error"></div>'
     + '<div class="card">'
     + '<div class="input-group"><label>Property address *</label><input id="o-addr" placeholder="88 Birch Ave"/></div>'
@@ -1024,33 +1085,32 @@ async function saveOffer(clientId) {
 function featureList() {
   var items = ['Unlimited agents and clients','Full deal and offer history','Auto-flagging and retainer tracking','Reporting dashboard','Priority support'];
   var html = '<div style="display:flex;flex-direction:column;gap:8px">';
-  items.forEach(function(item) { html += '<div style="display:flex;align-items:center;gap:10px;font-size:13px"><span style="color:#3B6D11;font-weight:500;font-size:15px">&#10003;</span><span>' + item + '</span></div>'; });
+  items.forEach(function(item) { html += '<div style="display:flex;align-items:center;gap:10px;font-size:13px"><span style="color:#3B6D11;font-weight:500;font-size:15px">&#10003;</span><span style="color:var(--text1)">' + item + '</span></div>'; });
   return html + '</div>';
 }
 function stripeComingSoon() { toast('Payments coming soon &#8212; stay tuned!', 3000); }
 function screenUpgrade() {
   var tier = (currentProfile && currentProfile.tier) || 'free';
   if (tier === 'paid') {
-    return '<div class="header"><h1>Your plan</h1></div><div class="content">'
+    return '<div class="content">'
          + '<div class="card" style="text-align:center;padding:24px 16px">'
          + '<div style="font-size:32px;margin-bottom:8px">&#10003;</div>'
-         + '<div style="font-size:17px;font-weight:500;margin-bottom:6px">You are on the Pro plan</div>'
-         + '<div style="font-size:13px;color:#888">Unlimited agents, clients, and access to the reporting dashboard.</div>'
+         + '<div style="font-size:17px;font-weight:500;color:var(--text1);margin-bottom:6px">You are on the Pro plan</div>'
+         + '<div style="font-size:13px;color:var(--text2)">Unlimited agents, clients, and access to the reporting dashboard.</div>'
          + '</div><span class="back-btn" onclick="navigate(\'dashboard\')">&#8592; Back to dashboard</span></div>';
   }
-  return '<div class="header"><h1>Upgrade to Pro</h1><p>Unlock the full RealTrack experience</p></div>'
-       + '<div class="content"><span class="back-btn" onclick="navigate(\'dashboard\')">&#8592; Back</span>'
-       + '<div class="card" style="border:1.5px solid #1B3060">'
-       + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div style="font-size:16px;font-weight:500">Pro &#8212; Monthly</div><div style="font-size:20px;font-weight:500;color:#1B3060">$19<span style="font-size:13px;color:#888">/mo</span></div></div>'
-       + '<div style="font-size:12px;color:#888;margin-bottom:14px">Billed monthly. Cancel anytime.</div>'
+  return '<div class="content"><span class="back-btn" onclick="navigate(\'dashboard\')">&#8592; Back</span>'
+       + '<div class="card" style="border:1.5px solid var(--brand)">'
+       + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div style="font-size:16px;font-weight:500;color:var(--text1)">Pro &#8212; Monthly</div><div style="font-size:20px;font-weight:500;color:var(--brand)">$19<span style="font-size:13px;color:var(--text2)">/mo</span></div></div>'
+       + '<div style="font-size:12px;color:var(--text2);margin-bottom:14px">Billed monthly. Cancel anytime.</div>'
        + featureList() + '<button class="btn btn-primary" style="margin-top:14px" onclick="stripeComingSoon()">Get started &#8212; $19/mo</button></div>'
        + '<div class="card">'
-       + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><div style="font-size:16px;font-weight:500">Pro &#8212; Annual</div><div style="font-size:20px;font-weight:500;color:#1B3060">$16<span style="font-size:13px;color:#888">/mo</span></div></div>'
-       + '<div style="font-size:12px;color:#888;margin-bottom:6px">$190 billed once per year.</div>'
+       + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><div style="font-size:16px;font-weight:500;color:var(--text1)">Pro &#8212; Annual</div><div style="font-size:20px;font-weight:500;color:var(--brand)">$16<span style="font-size:13px;color:var(--text2)">/mo</span></div></div>'
+       + '<div style="font-size:12px;color:var(--text2);margin-bottom:6px">$190 billed once per year.</div>'
        + '<div style="display:inline-block;font-size:11px;padding:2px 8px;border-radius:6px;background:#EAF3DE;color:#27500A;margin-bottom:14px">Save $38/year</div>'
        + featureList() + '<button class="btn btn-primary" style="margin-top:14px" onclick="stripeComingSoon()">Get started &#8212; $190/yr</button></div>'
-       + '<div class="card" style="background:#f5f5f3;border:none"><div class="section-label">Free tier &#8212; current plan</div>'
-       + '<div style="font-size:13px;color:#888;line-height:1.7">Up to 5 agents &middot; Up to 5 clients &middot; Core CRM features</div></div></div>';
+       + '<div class="card" style="background:var(--surface3);border:none"><div class="section-label">Free tier &#8212; current plan</div>'
+       + '<div style="font-size:13px;color:var(--text2);line-height:1.7">Up to 5 agents &middot; Up to 5 clients &middot; Core CRM features</div></div></div>';
 }
 
 // ── Account ────────────────────────────────────────────────────
@@ -1058,19 +1118,19 @@ function screenAccount() {
   var tier  = (currentProfile && currentProfile.tier)     || 'free';
   var email = (currentUser    && currentUser.email)        || '&#8212;';
   var name  = (currentProfile && currentProfile.full_name) || '';
-  var html = '<div class="header"><h1>Account</h1></div><div class="content">';
+  var html = '<div class="content">';
   html += '<div class="card"><div class="section-label">Profile</div>'
         + '<div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">'
         + '<div class="avatar av-blue" style="width:48px;height:48px;font-size:16px">' + initials(name || email) + '</div>'
-        + '<div><div style="font-size:15px;font-weight:500">' + (name || 'Your account') + '</div>'
-        + '<div style="font-size:13px;color:#888">' + email + '</div></div></div>'
+        + '<div><div style="font-size:15px;font-weight:500;color:var(--text1)">' + (name || 'Your account') + '</div>'
+        + '<div style="font-size:13px;color:var(--text2)">' + email + '</div></div></div>'
         + '<div class="input-group" style="margin-bottom:0"><label>Display name</label><input id="acc-name" placeholder="Your name" value="' + (name || '') + '"/></div>'
-        + '<div class="tooltip">Your display name appears on the dashboard header and status bar.</div>'
+        + '<div class="tooltip">Your display name appears on the dashboard header.</div>'
         + '<button class="btn" style="margin-top:10px" onclick="saveName()">Save name</button></div>';
   html += '<div class="card"><div class="section-label">Plan</div>'
         + '<div style="display:flex;justify-content:space-between;align-items:center">'
-        + '<div><div style="font-size:15px;font-weight:500">' + (tier === 'paid' ? 'Pro' : 'Free tier') + '</div>'
-        + '<div style="font-size:12px;color:#888;margin-top:2px">' + (tier === 'paid' ? 'Unlimited agents, clients + reporting' : 'Up to 5 agents and 5 clients') + '</div></div>'
+        + '<div><div style="font-size:15px;font-weight:500;color:var(--text1)">' + (tier === 'paid' ? 'Pro' : 'Free tier') + '</div>'
+        + '<div style="font-size:12px;color:var(--text2);margin-top:2px">' + (tier === 'paid' ? 'Unlimited agents, clients + reporting' : 'Up to 5 agents and 5 clients') + '</div></div>'
         + (tier === 'free' ? '<button class="upgrade-btn" onclick="navigate(\'upgrade\')">Upgrade</button>' : '<span class="item-badge badge-green">Active</span>')
         + '</div></div>';
   html += '<div class="card"><div class="section-label">Security</div>'
@@ -1096,7 +1156,7 @@ function aRow(label, sub, action) {
   var click = action ? ' style="cursor:pointer" onclick="' + action + '"' : '';
   return '<div class="list-item"' + click + '>'
        + '<div class="item-info"><div class="item-name">' + label + '</div><div class="item-sub">' + sub + '</div></div>'
-       + (action ? '<div style="color:#888;font-size:16px">&#8250;</div>' : '')
+       + (action ? '<div style="color:var(--text2);font-size:16px">&#8250;</div>' : '')
        + '</div>';
 }
 
@@ -1106,7 +1166,6 @@ async function saveName() {
   var r = await sb.from('profiles').update({ full_name: name }).eq('id', currentUser.id);
   if (r.error) { toast('Error: ' + r.error.message); return; }
   if (currentProfile) currentProfile.full_name = name;
-  updateStatusName();
   toast('Name saved');
 }
 
@@ -1132,7 +1191,6 @@ async function changePassword() {
     currentUser = session.user;
     var pr = await sb.from('profiles').select('*').eq('id', session.user.id).single();
     currentProfile = pr.data || { tier: 'free' };
-    updateStatusName();
     navigate('dashboard');
   } else {
     navigate('login');
