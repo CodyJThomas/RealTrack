@@ -47,9 +47,11 @@ export default function LogOfferPage() {
   const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
   const tomorrow  = new Date(Date.now() + 86400000).toISOString().split('T')[0]
 
-  const [clientName,     setClientName]     = useState('')
-  const [existingDeals,  setExistingDeals]  = useState<ExistingDeal[]>([])
-  const [selectedDealId, setSelectedDealId] = useState<string | 'new'>('new')
+  const [clientName,      setClientName]      = useState('')
+  const [existingDeals,   setExistingDeals]   = useState<ExistingDeal[]>([])
+  const [selectedDealId,  setSelectedDealId]  = useState<string | 'new'>('new')
+  const [recentAddresses, setRecentAddresses] = useState<string[]>([])
+  const [addressFromChip, setAddressFromChip] = useState(false)
 
   // Context loaded when existing deal is selected
   const [agentInfo,         setAgentInfo]         = useState<AgentInfo | null>(null)
@@ -73,17 +75,27 @@ export default function LogOfferPage() {
 
   useEffect(() => {
     async function loadData() {
-      const [{ data: client }, { data: deals }] = await Promise.all([
+      const [{ data: client }, { data: deals }, { data: showings }] = await Promise.all([
         supabase.from('clients').select('full_name').eq('id', id).single(),
         supabase.from('deals')
           .select('id, address, stage, agent_id, representation')
           .eq('client_id', id)
           .order('created_at', { ascending: false }),
+        supabase.from('showings').select('address').eq('client_id', id)
+          .order('shown_at', { ascending: false }).limit(20),
       ])
       if (client) setClientName(client.full_name)
-      if (deals && deals.length > 0) {
-        setExistingDeals(deals as ExistingDeal[])
-        setSelectedDealId(deals[0].id)
+      const loadedDeals = (deals ?? []) as ExistingDeal[]
+      if (loadedDeals.length > 0) {
+        setExistingDeals(loadedDeals)
+        setSelectedDealId(loadedDeals[0].id)
+      }
+      if (showings) {
+        const dealAddresses = new Set(loadedDeals.map(d => d.address))
+        const unique = [...new Set(showings.map((r: { address: string }) => r.address))]
+          .filter(a => !dealAddresses.has(a))
+          .slice(0, 5)
+        setRecentAddresses(unique)
       }
     }
     loadData()
@@ -135,9 +147,15 @@ export default function LogOfferPage() {
       setError('Offer amount is required.')
       return
     }
-    if (selectedDealId === 'new' && !address.trim()) {
-      setError('Property address is required for a new deal.')
-      return
+    if (selectedDealId === 'new') {
+      if (!address.trim()) {
+        setError('Property address is required for a new deal.')
+        return
+      }
+      if (!addressFromChip && (!/\d/.test(address) || address.trim().length < 6)) {
+        setError('Enter a street address including a number (e.g. 123 Main St).')
+        return
+      }
     }
     setSaving(true)
     setError(null)
@@ -271,13 +289,35 @@ export default function LogOfferPage() {
               <div>
                 <label style={labelStyle}>
                   Address <span style={{ color: 'var(--danger)' }}>*</span>
+                  <span style={{ color: 'var(--text3)', fontWeight: 400 }}> (zip not required)</span>
                 </label>
+                {recentAddresses.length > 0 && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+                    {recentAddresses.map(a => (
+                      <button
+                        key={a}
+                        type="button"
+                        onClick={() => { setAddress(a); setAddressFromChip(true) }}
+                        style={{
+                          padding: '4px 10px', borderRadius: 20, fontSize: 12,
+                          border: `1px solid ${address === a ? 'var(--brand)' : 'var(--border)'}`,
+                          background: address === a ? 'var(--brand-light)' : 'var(--surface3)',
+                          color: address === a ? 'var(--brand)' : 'var(--text2)',
+                          cursor: 'pointer', fontWeight: 500,
+                          maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {a}
+                      </button>
+                    ))}
+                  </div>
+                )}
                 <input
                   style={inputStyle}
                   type="text"
                   placeholder="123 Main St, Columbus OH"
                   value={address}
-                  onChange={e => setAddress(e.target.value)}
+                  onChange={e => { setAddress(e.target.value); setAddressFromChip(false) }}
                 />
               </div>
               <div>
