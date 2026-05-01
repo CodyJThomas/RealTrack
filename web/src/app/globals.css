@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-brand: #1B3060;
+  --color-brand-mid: #2563EB;
+  --color-brand-light: #EEF2FF;
+  --color-brand-dark: #0D1827;
+}
+
+:root {
+  --brand: #1B3060;
+  --brand-mid: #2563EB;
+  --brand-light: #EEF2FF;
+  --surface: #F9F7F4;
+  --surface2: #F3F1ED;
+  --surface3: #EAE7E1;
+  --text1: #111827;
+  --text2: #6B7280;
+  --text3: #9CA3AF;
+  --border: rgba(0,0,0,0.08);
+  --warn: #BA7517;
+  --danger: #A32D2D;
+  --good: #3B6D11;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --brand: #3B82F6;
+    --brand-mid: #60A5FA;
+    --brand-light: #1E3A5F;
+    --surface: #111827;
+    --surface2: #1F2937;
+    --surface3: #374151;
+    --text1: #F9FAFB;
+    --text2: #9CA3AF;
+    --text3: #6B7280;
+    --border: rgba(255,255,255,0.07);
+  }
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-jakarta), system-ui, -apple-system, sans-serif; background: var(--surface); color: var(--text1); }
+button { cursor: pointer; transition: opacity 0.1s ease; }
+button:active { opacity: 0.65; }
+a { transition: opacity 0.1s ease; }
+a:active { opacity: 0.65; }
+[data-pressable] { cursor: pointer; transition: opacity 0.1s ease; }
+[data-pressable]:active { opacity: 0.65; }
