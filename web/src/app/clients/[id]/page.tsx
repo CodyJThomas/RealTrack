@@ -63,10 +63,11 @@ function StageBadge({ stage }: { stage: string | null }) {
   )
 }
 
-function VisitToastHandler({ onToast }: { onToast: (msg: string) => void }) {
+function ReturnToastHandler({ onToast }: { onToast: (msg: string) => void }) {
   const searchParams = useSearchParams()
   useEffect(() => {
     if (searchParams.get('visit') === 'logged') onToast('Visit logged')
+    if (searchParams.get('offer') === 'logged') onToast('Offer logged')
   }, [])
   return null
 }
@@ -436,7 +437,7 @@ export default function ClientDetailPage() {
       <BottomNav />
 
       <Suspense fallback={null}>
-        <VisitToastHandler onToast={msg => setToast(msg)} />
+        <ReturnToastHandler onToast={msg => setToast(msg)} />
       </Suspense>
 
       {toast && <Toast message={toast} onDismiss={() => setToast(null)} />}
