@@ -15,9 +15,7 @@ export default function TopBar() {
       display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
       padding: '0 16px',
     }}>
-      <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--brand)', letterSpacing: '-0.2px' }}>
-        RealTrack
-      </span>
+      <img src="/icon-192.png" alt="RealTrack" style={{ height: 24, width: 24, borderRadius: 6 }} />
     </div>
   )
 }
