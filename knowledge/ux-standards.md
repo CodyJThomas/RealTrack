@@ -25,6 +25,11 @@ Dark mode is unchanged (already warm).
 
 ## Typography Scale
 
+**Page header title color rule (Option B):**
+- Navigation/browse pages (Dashboard, Clients, Settings): `var(--text1)` — you're viewing
+- Action/form pages (Log Showing, Log Offer, future forms): `var(--brand)` — you're doing something
+- The color is semantic: blue = action, near-black = navigation
+
 Plus Jakarta Sans renders beautifully at all these sizes — lean into its geometric warmth by keeping weights clean (400, 500, 600, 700 only — avoid 300 or 800+). Note: Jakarta 700 reads noticeably heavier than system-ui 700 did; prefer 500–600 for UI elements that previously used bold, and reserve 700 for headings only.
 
 | Role | Size | Weight | Color |

@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import BottomNav from '@/components/BottomNav'
 import type { Client } from '@/lib/types'
+import { initials, avatarColor } from '@/lib/utils'
 
 const V2_BANNER_KEY = 'rt_v2_banner_dismissed'
 
@@ -58,22 +59,30 @@ export default function Dashboard() {
           {clients.filter(c => !c.archived_at).map(c => (
             <div key={c.id} data-pressable onClick={() => router.push(`/clients/${c.id}`)} style={{
               padding: '14px 16px', borderBottom: '1px solid var(--border)',
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              display: 'flex', alignItems: 'center', gap: 12,
               cursor: 'pointer',
             }}>
-              <div>
+              <div style={{
+                width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
+                background: avatarColor(c.full_name),
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: '#fff', fontSize: 13, fontWeight: 500,
+              }}>
+                {initials(c.full_name)}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 600, fontSize: 15 }}>{c.full_name}</div>
                 <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 2 }}>{c.phone ?? c.email}</div>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3, flexShrink: 0 }}>
                 {budgetLabel(c) && (
                   <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--brand)' }}>{budgetLabel(c)}</span>
                 )}
                 {c.flag_reason && (
-                  <span style={{ fontSize: 10, color: 'var(--warn)', fontWeight: 600 }}>⚑ flagged</span>
+                  <span style={{ fontSize: 10, color: 'var(--warn)', fontWeight: 600 }}>Flagged</span>
                 )}
                 {c.retainer_required && (
-                  <span style={{ fontSize: 10, color: 'var(--text3)' }}>retainer req.</span>
+                  <span style={{ fontSize: 10, color: 'var(--text3)' }}>Retainer req.</span>
                 )}
               </div>
             </div>

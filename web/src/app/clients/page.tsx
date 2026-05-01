@@ -275,7 +275,6 @@ export default function ClientsPage() {
           display: 'flex', flexDirection: 'column', alignItems: 'center',
           justifyContent: 'center', padding: '60px 24px', gap: 12,
         }}>
-          <span style={{ fontSize: 40 }}>👥</span>
           <p style={{ fontWeight: 600, fontSize: 16 }}>No clients yet</p>
           <button
             onClick={() => setShowAddForm(true)}

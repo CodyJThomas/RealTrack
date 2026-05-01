@@ -22,6 +22,8 @@ export type Showing = {
   price: number | null
   bedrooms: number | null
   bathrooms: number | null
+  garage: 'none' | 'detached' | 'attached' | null
+  basement: boolean
   shown_at: string
   notes: string | null
   created_at: string

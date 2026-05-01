@@ -7,6 +7,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState(false)
   const [demoLoading, setDemoLoading] = useState(false)
+  const [demoError, setDemoError] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
@@ -21,12 +22,14 @@ export default function LoginPage() {
 
   async function handleDemo() {
     setDemoLoading(true)
+    setDemoError(false)
     const { error } = await supabase.auth.signInWithPassword({
       email: 'demo@realtrack.app',
       password: 'realtrack-demo-2026',
     })
     if (error) {
       setDemoLoading(false)
+      setDemoError(true)
       return
     }
     router.push('/')
@@ -63,6 +66,11 @@ export default function LoginPage() {
             <span style={{ fontSize: 12 }}>or</span>
             <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.3)' }} />
           </div>
+          {demoError && (
+            <p style={{ fontSize: 13, color: '#fca5a5', textAlign: 'center', margin: 0 }}>
+              Demo unavailable — try again.
+            </p>
+          )}
           <button onClick={handleDemo} disabled={demoLoading} style={{
             padding: '12px 16px', borderRadius: 8,
             background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',

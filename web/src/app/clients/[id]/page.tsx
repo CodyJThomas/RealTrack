@@ -1,6 +1,6 @@
 'use client'
-import { useEffect, useState } from 'react'
-import { useRouter, useParams } from 'next/navigation'
+import { useEffect, useState, Suspense } from 'react'
+import { useRouter, useParams, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import BottomNav from '@/components/BottomNav'
 import { Toast } from '@/components/Toast'
@@ -61,6 +61,14 @@ function StageBadge({ stage }: { stage: string | null }) {
       {stage}
     </span>
   )
+}
+
+function VisitToastHandler({ onToast }: { onToast: (msg: string) => void }) {
+  const searchParams = useSearchParams()
+  useEffect(() => {
+    if (searchParams.get('visit') === 'logged') onToast('Visit logged')
+  }, [])
+  return null
 }
 
 export default function ClientDetailPage() {
@@ -349,7 +357,7 @@ export default function ClientDetailPage() {
               textDecoration: 'none', textAlign: 'center',
             }}
           >
-            Log visit
+            Log showing
           </a>
           <a
             href={`/clients/${id}/log-offer`}
@@ -426,6 +434,10 @@ export default function ClientDetailPage() {
       </div>
 
       <BottomNav />
+
+      <Suspense fallback={null}>
+        <VisitToastHandler onToast={msg => setToast(msg)} />
+      </Suspense>
 
       {toast && <Toast message={toast} onDismiss={() => setToast(null)} />}
     </div>
