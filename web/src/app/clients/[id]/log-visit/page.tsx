@@ -53,6 +53,7 @@ export default function LogShowingPage() {
   const [saving,      setSaving]      = useState(false)
   const [error,       setError]       = useState<string | null>(null)
   const [recentAddresses, setRecentAddresses] = useState<string[]>([])
+  const [addressFromChip, setAddressFromChip] = useState(false)
 
   useEffect(() => {
     async function loadData() {
@@ -73,7 +74,7 @@ export default function LogShowingPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!address.trim()) { setError('Address is required.'); return }
-    if (!/\d/.test(address) || address.trim().length < 6) {
+    if (!addressFromChip && (!/\d/.test(address) || address.trim().length < 6)) {
       setError('Enter a street address including a number (e.g. 123 Main St).')
       return
     }
@@ -141,7 +142,7 @@ export default function LogShowingPage() {
                 <button
                   key={a}
                   type="button"
-                  onClick={() => setAddress(a)}
+                  onClick={() => { setAddress(a); setAddressFromChip(true) }}
                   style={{
                     padding: '4px 10px', borderRadius: 20, fontSize: 12,
                     border: `1px solid ${address === a ? 'var(--brand)' : 'var(--border)'}`,
@@ -161,8 +162,7 @@ export default function LogShowingPage() {
             type="text"
             placeholder="123 Main St, Columbus OH"
             value={address}
-            onChange={e => setAddress(e.target.value)}
-            autoFocus
+            onChange={e => { setAddress(e.target.value); setAddressFromChip(false) }}
           />
         </div>
 

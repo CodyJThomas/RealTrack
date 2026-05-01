@@ -443,14 +443,16 @@ export default function ClientsPage() {
                 <label style={labelStyle}>Budget range ($)</label>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
                     value={budgetMin}
                     onChange={e => setBudgetMin(e.target.value)}
                     placeholder="Min"
                     style={{ ...inputStyle, flex: 1 }}
                   />
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
                     value={budgetMax}
                     onChange={e => setBudgetMax(e.target.value)}
                     placeholder="Max"

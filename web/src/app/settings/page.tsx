@@ -27,8 +27,10 @@ export default function SettingsPage() {
         <h1 style={{ fontSize: 20, fontWeight: 700 }}>Settings</h1>
       </div>
       <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {email && (
-          <p style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 4 }}>Signed in as {email}</p>
+        {email !== null && (
+          <p style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 4 }}>
+            Signed in as {email}
+          </p>
         )}
         <button onClick={handleLogout} style={{
           padding: '12px 16px', borderRadius: 8,
