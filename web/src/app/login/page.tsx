@@ -39,7 +39,7 @@ export default function LoginPage() {
     <div style={{
       minHeight: '100vh', display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
-      background: 'var(--brand)', color: '#fff', padding: 24
+      background: '#1B3060', color: '#fff', padding: 24
     }}>
       <h1 style={{ fontSize: 28, fontWeight: 700, marginBottom: 8 }}>RealTrack</h1>
       <p style={{ opacity: 0.8, marginBottom: 32, fontSize: 14 }}>Client intelligence for realtors</p>
