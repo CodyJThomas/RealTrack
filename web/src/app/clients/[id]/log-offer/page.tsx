@@ -33,6 +33,7 @@ type ExistingDeal = {
 
 type AgentInfo = { full_name: string; brokerage: string | null }
 type LastOffer = { amount: number | null; direction: 'sent' | 'received'; status: string | null }
+type AgentOption = { id: string; full_name: string; brokerage: string | null }
 
 const STAGE_OPTIONS  = ['Active', 'Pending', 'Under Contract', 'Closed', 'Fallen Through']
 const STATUS_OPTIONS = ['Pending', 'Accepted', 'Rejected', 'Countered', 'Withdrawn']
@@ -59,9 +60,11 @@ export default function LogOfferPage() {
   const [dealStageWarning,  setDealStageWarning]  = useState(false)
 
   // New deal fields
-  const [address,        setAddress]        = useState('')
-  const [stage,          setStage]          = useState('Active')
-  const [representation, setRepresentation] = useState<'buyer' | 'seller'>('buyer')
+  const [address,          setAddress]          = useState('')
+  const [stage,            setStage]            = useState('Active')
+  const [representation,   setRepresentation]   = useState<'buyer' | 'seller'>('buyer')
+  const [allAgents,        setAllAgents]        = useState<AgentOption[]>([])
+  const [selectedAgentId,  setSelectedAgentId]  = useState<string | null>(null)
 
   // Offer fields
   const [amount,    setAmount]    = useState('')
@@ -75,7 +78,7 @@ export default function LogOfferPage() {
 
   useEffect(() => {
     async function loadData() {
-      const [{ data: client }, { data: deals }, { data: showings }] = await Promise.all([
+      const [{ data: client }, { data: deals }, { data: showings }, { data: agents }] = await Promise.all([
         supabase.from('clients').select('full_name').eq('id', id).single(),
         supabase.from('deals')
           .select('id, address, stage, agent_id, representation')
@@ -83,7 +86,9 @@ export default function LogOfferPage() {
           .order('created_at', { ascending: false }),
         supabase.from('showings').select('address').eq('client_id', id)
           .order('shown_at', { ascending: false }).limit(20),
+        supabase.from('agents').select('id, full_name, brokerage').is('archived_at', null).order('full_name'),
       ])
+      setAllAgents((agents ?? []) as AgentOption[])
       if (client) setClientName(client.full_name)
       const loadedDeals = (deals ?? []) as ExistingDeal[]
       if (loadedDeals.length > 0) {
@@ -168,7 +173,7 @@ export default function LogOfferPage() {
     if (selectedDealId === 'new') {
       const { data: newDeal, error: dealError } = await supabase
         .from('deals')
-        .insert({ user_id: user.id, client_id: id, address: address.trim(), stage, representation })
+        .insert({ user_id: user.id, client_id: id, address: address.trim(), stage, representation, agent_id: selectedAgentId })
         .select('id')
         .single()
       if (dealError || !newDeal) {
@@ -327,6 +332,24 @@ export default function LogOfferPage() {
                   <Chip label="Seller" active={representation === 'seller'} onClick={() => setRepresentation('seller')} />
                 </div>
               </div>
+              {allAgents.length > 0 && (
+                <div>
+                  <label style={labelStyle}>
+                    Agent <span style={{ color: 'var(--text3)', fontWeight: 400 }}>(optional)</span>
+                  </label>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    <Chip label="None" active={selectedAgentId === null} onClick={() => setSelectedAgentId(null)} />
+                    {allAgents.map(a => (
+                      <Chip
+                        key={a.id}
+                        label={a.brokerage ? `${a.full_name} · ${a.brokerage}` : a.full_name}
+                        active={selectedAgentId === a.id}
+                        onClick={() => setSelectedAgentId(a.id)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
               <div>
                 <label style={labelStyle}>Deal stage</label>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
