@@ -1,6 +1,6 @@
 'use client'
-import { useState, useEffect, Suspense } from 'react'
-import { useParams, useRouter, useSearchParams } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import BottomNav from '@/components/BottomNav'
 import { inputStyle, labelStyle } from '@/lib/utils'
@@ -23,10 +23,19 @@ function Chip({ label, active, onClick }: { label: string; active: boolean; onCl
   )
 }
 
-type ExistingDeal = { id: string; address: string; stage: string }
+type ExistingDeal = {
+  id: string
+  address: string
+  stage: string
+  agent_id: string | null
+  representation: 'buyer' | 'seller'
+}
 
-const STAGE_OPTIONS   = ['Active', 'Pending', 'Under Contract', 'Closed', 'Fallen Through']
-const STATUS_OPTIONS  = ['Pending', 'Accepted', 'Rejected', 'Countered', 'Withdrawn']
+type AgentInfo = { full_name: string; brokerage: string | null }
+type LastOffer = { amount: number | null; direction: 'sent' | 'received'; status: string | null }
+
+const STAGE_OPTIONS  = ['Active', 'Pending', 'Under Contract', 'Closed', 'Fallen Through']
+const STATUS_OPTIONS = ['Pending', 'Accepted', 'Rejected', 'Countered', 'Withdrawn']
 
 export default function LogOfferPage() {
   const router = useRouter()
@@ -38,29 +47,38 @@ export default function LogOfferPage() {
   const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
   const tomorrow  = new Date(Date.now() + 86400000).toISOString().split('T')[0]
 
-  const [clientName,    setClientName]    = useState('')
-  const [existingDeals, setExistingDeals] = useState<ExistingDeal[]>([])
+  const [clientName,     setClientName]     = useState('')
+  const [existingDeals,  setExistingDeals]  = useState<ExistingDeal[]>([])
   const [selectedDealId, setSelectedDealId] = useState<string | 'new'>('new')
 
+  // Context loaded when existing deal is selected
+  const [agentInfo,         setAgentInfo]         = useState<AgentInfo | null>(null)
+  const [lastOffer,         setLastOffer]         = useState<LastOffer | null>(null)
+  const [dealStageWarning,  setDealStageWarning]  = useState(false)
+
   // New deal fields
-  const [address,  setAddress]  = useState('')
-  const [stage,    setStage]    = useState('Active')
+  const [address,        setAddress]        = useState('')
+  const [stage,          setStage]          = useState('Active')
+  const [representation, setRepresentation] = useState<'buyer' | 'seller'>('buyer')
 
   // Offer fields
-  const [amount,     setAmount]     = useState('')
-  const [direction,  setDirection]  = useState<'sent' | 'received'>('sent')
-  const [status,     setStatus]     = useState('Pending')
-  const [offerDate,  setOfferDate]  = useState(today)
-  const [notes,      setNotes]      = useState('')
+  const [amount,    setAmount]    = useState('')
+  const [direction, setDirection] = useState<'sent' | 'received'>('sent')
+  const [status,    setStatus]    = useState('Pending')
+  const [offerDate, setOfferDate] = useState(today)
+  const [notes,     setNotes]     = useState('')
 
-  const [saving,  setSaving]  = useState(false)
-  const [error,   setError]   = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [error,  setError]  = useState<string | null>(null)
 
   useEffect(() => {
     async function loadData() {
       const [{ data: client }, { data: deals }] = await Promise.all([
         supabase.from('clients').select('full_name').eq('id', id).single(),
-        supabase.from('deals').select('id, address, stage').eq('client_id', id).order('created_at', { ascending: false }),
+        supabase.from('deals')
+          .select('id, address, stage, agent_id, representation')
+          .eq('client_id', id)
+          .order('created_at', { ascending: false }),
       ])
       if (client) setClientName(client.full_name)
       if (deals && deals.length > 0) {
@@ -70,6 +88,46 @@ export default function LogOfferPage() {
     }
     loadData()
   }, [id])
+
+  // Load agent info + last offer whenever selected deal changes
+  useEffect(() => {
+    if (selectedDealId === 'new' || existingDeals.length === 0) {
+      setAgentInfo(null)
+      setLastOffer(null)
+      setDealStageWarning(false)
+      return
+    }
+
+    const deal = existingDeals.find(d => d.id === selectedDealId)
+    if (!deal) return
+
+    setDealStageWarning(['Closed', 'Fallen Through'].includes(deal.stage))
+
+    async function loadDealContext() {
+      const [agentResult, offerResult] = await Promise.all([
+        deal!.agent_id
+          ? supabase.from('agents').select('full_name, brokerage').eq('id', deal!.agent_id).single()
+          : Promise.resolve({ data: null }),
+        supabase.from('offers')
+          .select('amount, direction, status')
+          .eq('deal_id', selectedDealId)
+          .order('offer_date', { ascending: false })
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+      ])
+
+      setAgentInfo((agentResult.data as AgentInfo | null) ?? null)
+
+      const last = offerResult.data as LastOffer | null
+      setLastOffer(last)
+      if (last) {
+        setDirection(last.direction === 'sent' ? 'received' : 'sent')
+      }
+    }
+
+    loadDealContext()
+  }, [selectedDealId, existingDeals])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -92,7 +150,7 @@ export default function LogOfferPage() {
     if (selectedDealId === 'new') {
       const { data: newDeal, error: dealError } = await supabase
         .from('deals')
-        .insert({ user_id: user.id, client_id: id, address: address.trim(), stage })
+        .insert({ user_id: user.id, client_id: id, address: address.trim(), stage, representation })
         .select('id')
         .single()
       if (dealError || !newDeal) {
@@ -122,6 +180,17 @@ export default function LogOfferPage() {
   }
 
   const isNewDeal = selectedDealId === 'new'
+  const selectedDeal = existingDeals.find(d => d.id === selectedDealId)
+
+  function fmtAmount(n: number | null) {
+    if (!n) return '—'
+    return `$${n.toLocaleString()}`
+  }
+
+  function agentLabel() {
+    if (!selectedDeal) return 'Agent'
+    return selectedDeal.representation === 'seller' ? "Buyer's agent" : "Seller's agent"
+  }
 
   return (
     <div style={{ paddingBottom: 80 }}>
@@ -150,7 +219,7 @@ export default function LogOfferPage() {
             Property
           </div>
 
-          {/* Existing deal selector */}
+          {/* Existing deal chips */}
           {existingDeals.length > 0 && (
             <div>
               <label style={labelStyle}>Deal</label>
@@ -168,6 +237,34 @@ export default function LogOfferPage() {
             </div>
           )}
 
+          {/* Existing deal context panel */}
+          {!isNewDeal && (agentInfo || lastOffer || dealStageWarning) && (
+            <div style={{
+              background: 'var(--surface2)', border: '1px solid var(--border)',
+              borderRadius: 8, padding: '10px 12px',
+              display: 'flex', flexDirection: 'column', gap: 5,
+            }}>
+              {agentInfo && (
+                <div style={{ fontSize: 12, color: 'var(--text2)' }}>
+                  <span style={{ color: 'var(--text3)', marginRight: 4 }}>{agentLabel()}:</span>
+                  {agentInfo.full_name}{agentInfo.brokerage ? ` · ${agentInfo.brokerage}` : ''}
+                </div>
+              )}
+              {lastOffer && (
+                <div style={{ fontSize: 12, color: 'var(--text2)' }}>
+                  <span style={{ color: 'var(--text3)', marginRight: 4 }}>Last offer:</span>
+                  {fmtAmount(lastOffer.amount)} {lastOffer.direction === 'sent' ? 'we sent' : 'we received'}
+                  {lastOffer.status ? ` — ${lastOffer.status.toLowerCase()}` : ''}
+                </div>
+              )}
+              {dealStageWarning && (
+                <div style={{ fontSize: 12, color: 'var(--warn)', fontWeight: 500 }}>
+                  This deal is {selectedDeal?.stage?.toLowerCase()} — confirm you want to add an offer.
+                </div>
+              )}
+            </div>
+          )}
+
           {/* New deal fields */}
           {isNewDeal && (
             <>
@@ -182,6 +279,13 @@ export default function LogOfferPage() {
                   value={address}
                   onChange={e => setAddress(e.target.value)}
                 />
+              </div>
+              <div>
+                <label style={labelStyle}>Representing</label>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <Chip label="Buyer" active={representation === 'buyer'} onClick={() => setRepresentation('buyer')} />
+                  <Chip label="Seller" active={representation === 'seller'} onClick={() => setRepresentation('seller')} />
+                </div>
               </div>
               <div>
                 <label style={labelStyle}>Deal stage</label>

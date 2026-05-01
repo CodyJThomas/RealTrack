@@ -112,6 +112,8 @@ CREATE TABLE public.deals (
   our_offer     NUMERIC(12,2),   -- offer from your user's side
   their_offer   NUMERIC(12,2),   -- offer from agent's side
   final_price   NUMERIC(12,2),   -- closing price if closed
+  representation TEXT NOT NULL DEFAULT 'buyer'
+                CHECK (representation IN ('buyer', 'seller')),
   notes         TEXT,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
