@@ -165,7 +165,7 @@ export default function AgentsPage() {
         <h1 style={{ fontSize: 20, fontWeight: 700 }}>Agents</h1>
         <InfoSheet
           title="Agents"
-          body="Manage the agents on your team. Add agents to assign clients and track activity by rep. Each agent gets their own login and sees only their assigned clients."
+          body="Track the listing agents you encounter during showings. Log their contact details and brokerage to build your network and quickly reference who's representing properties you've toured."
         />
       </div>
 
