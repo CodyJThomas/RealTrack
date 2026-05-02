@@ -11,6 +11,16 @@ type ClientRow = {
   full_name: string
   flag_reason: string | null
   retainer_required: boolean
+  created_at: string
+}
+
+type ActivityEvent = {
+  id: string
+  ts: string
+  kind: 'client' | 'agent' | 'showing'
+  label: string
+  sub?: string
+  href?: string
 }
 
 type Tier = 'hot' | 'warm' | 'stalled' | 'new'
@@ -112,6 +122,50 @@ function fmtUpcoming(dateStr: string): string {
   return new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
+function fmtActivityAddr(addr: string): string {
+  const parts = addr.split(',')
+  if (parts.length < 2) return addr
+  const city = parts[1].trim()
+    .replace(/\s+\d{5}(-\d{4})?$/, '')
+    .replace(/\s+[A-Z]{2}$/, '')
+    .trim()
+  return `${parts[0]}, ${city}`
+}
+
+function ActivityIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text2)"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" />
+      <polyline points="12 6 12 12 16 14" />
+    </svg>
+  )
+}
+
+function ActivityEventIcon({ kind }: { kind: ActivityEvent['kind'] }) {
+  if (kind === 'client') return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--brand)"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 20v-1a8 8 0 0 1 16 0v1" />
+    </svg>
+  )
+  if (kind === 'agent') return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text2)"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="7" width="20" height="14" rx="2" />
+      <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
+    </svg>
+  )
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text2)"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z" />
+      <circle cx="12" cy="10" r="3" />
+    </svg>
+  )
+}
+
 function timelineBadge(t: string) {
   const urgent = t === 'asap' || t === '1-3 months'
   return {
@@ -126,6 +180,7 @@ export default function CapacityDashboard() {
 
   const [clients, setClients] = useState<ClientStats[]>([])
   const [upcoming, setUpcoming] = useState<UpcomingShowing[]>([])
+  const [activity, setActivity] = useState<ActivityEvent[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -135,7 +190,7 @@ export default function CapacityDashboard() {
 
       const { data: clientData } = await supabase
         .from('clients')
-        .select('id, full_name, flag_reason, retainer_required')
+        .select('id, full_name, flag_reason, retainer_required, created_at')
         .is('archived_at', null)
 
       if (!clientData || clientData.length === 0) { setLoading(false); return }
@@ -148,10 +203,12 @@ export default function CapacityDashboard() {
         { data: showingData },
         { data: dealData },
         { data: prefsData },
+        { data: agentData },
       ] = await Promise.all([
         supabase.from('showings').select('id, client_id, shown_at, address').in('client_id', clientIds),
         supabase.from('deals').select('id, client_id').in('client_id', clientIds),
         supabase.from('client_preferences').select('client_id, timeline').in('client_id', clientIds),
+        supabase.from('agents').select('id, full_name, brokerage, created_at').order('created_at', { ascending: false }).limit(5),
       ])
 
       const dealIds = (dealData ?? []).map((d: { id: string }) => d.id)
@@ -211,6 +268,33 @@ export default function CapacityDashboard() {
       })
 
       setClients(enriched)
+
+      // Build activity feed from recent clients, showings, and agents
+      type AgentRow = { id: string; full_name: string; brokerage: string | null; created_at: string }
+      type ShowingRow2 = { id: string; client_id: string; shown_at: string; address: string }
+
+      const clientEvts: ActivityEvent[] = [...(clientData as ClientRow[])]
+        .sort((a, b) => b.created_at.localeCompare(a.created_at))
+        .slice(0, 5)
+        .map(c => ({ id: `c-${c.id}`, ts: c.created_at, kind: 'client' as const, label: c.full_name, href: `/clients/${c.id}` }))
+
+      const showingEvts: ActivityEvent[] = [...((showingData ?? []) as ShowingRow2[])]
+        .sort((a, b) => b.shown_at.localeCompare(a.shown_at))
+        .slice(0, 5)
+        .map(s => {
+          const c = (clientData as ClientRow[]).find(x => x.id === s.client_id)
+          return { id: `s-${s.id}`, ts: s.shown_at, kind: 'showing' as const, label: fmtActivityAddr(s.address), sub: c?.full_name, href: `/clients/${s.client_id}` }
+        })
+
+      const agentEvts: ActivityEvent[] = ((agentData ?? []) as AgentRow[])
+        .map(a => ({ id: `a-${a.id}`, ts: a.created_at, kind: 'agent' as const, label: a.full_name, sub: a.brokerage ?? undefined, href: '/agents' }))
+
+      setActivity(
+        [...clientEvts, ...showingEvts, ...agentEvts]
+          .sort((a, b) => b.ts.localeCompare(a.ts))
+          .slice(0, 8)
+      )
+
       setLoading(false)
     }
     load()
@@ -359,6 +443,42 @@ export default function CapacityDashboard() {
           <TierSection tier="warm" />
           <TierSection tier="stalled" />
           <TierSection tier="new" />
+
+          {activity.length > 0 && (
+            <div style={{ marginTop: 12, marginBottom: 4 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '14px 16px 6px' }}>
+                <ActivityIcon />
+                <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text1)' }}>Recent Activity</span>
+              </div>
+              <div style={{
+                background: 'var(--surface)', border: '1px solid var(--border)',
+                borderRadius: 12, margin: '0 16px', overflow: 'hidden',
+              }}>
+                {activity.map((evt, i) => (
+                  <div key={evt.id}
+                    onClick={() => evt.href && router.push(evt.href)}
+                    style={{
+                      padding: '11px 16px', cursor: evt.href ? 'pointer' : 'default',
+                      borderTop: i > 0 ? '1px solid var(--border)' : 'none',
+                      display: 'flex', alignItems: 'center', gap: 10,
+                    }}>
+                    <ActivityEventIcon kind={evt.kind} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {evt.label}
+                      </div>
+                      {evt.sub && (
+                        <div style={{ fontSize: 11, color: 'var(--text2)', marginTop: 1 }}>{evt.sub}</div>
+                      )}
+                    </div>
+                    <span style={{ fontSize: 11, color: 'var(--text3)', flexShrink: 0 }}>
+                      {fmtIdle(daysAgo(evt.ts.split('T')[0]))}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
         </div>
       )}
