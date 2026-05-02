@@ -6,6 +6,8 @@ import BottomNav from '@/components/BottomNav'
 import { Toast } from '@/components/Toast'
 import type { Client } from '@/lib/types'
 import { initials, avatarColor, fmtBudget, sectionLabel, inputStyle, labelStyle } from '@/lib/utils'
+import { computeInsights } from '@/lib/intelligence'
+import type { Signal } from '@/lib/intelligence'
 
 type Showing = {
   id: string
@@ -54,12 +56,6 @@ type ClientPrefs = {
 }
 
 // ── Client Intelligence ────────────────────────────────────────────────────
-
-type Signal = {
-  level: 'green' | 'amber' | 'red'
-  label: string
-  detail: string
-}
 
 function daysIdle(dateStr: string): number {
   return Math.round((Date.now() - new Date(dateStr + 'T12:00:00').getTime()) / 86400000)
@@ -186,6 +182,38 @@ function ScorecardCard({ signals }: { signals: Signal[] }) {
           <span style={{ fontSize: 12, color: 'var(--text2)', textAlign: 'right', marginLeft: 8 }}>
             {sig.detail}
           </span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function InsightsCard({ signals }: { signals: Signal[] }) {
+  const insights = computeInsights(signals)
+  if (insights.length === 0) return null
+  return (
+    <div style={{
+      background: 'var(--surface)', border: '1px solid var(--border)',
+      borderRadius: 12, padding: '14px 16px',
+    }}>
+      <div style={sectionLabel}>Real Insights</div>
+      {insights.map((ins, i) => (
+        <div key={i} style={{
+          paddingTop: i === 0 ? 0 : 10,
+          paddingBottom: i === insights.length - 1 ? 0 : 10,
+          borderTop: i === 0 ? 'none' : '1px solid var(--border)',
+          display: 'flex', alignItems: 'flex-start', gap: 10,
+        }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+            stroke={ins.level === 'red' ? 'var(--danger)' : 'var(--warn)'}
+            strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+            style={{ flexShrink: 0, marginTop: 1 }}>
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+          </svg>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text1)' }}>{ins.action}</div>
+            <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 2, lineHeight: 1.4 }}>{ins.context}</div>
+          </div>
         </div>
       ))}
     </div>
@@ -516,10 +544,15 @@ export default function ClientDetailPage() {
 
       <div style={{ padding: '16px 16px 0', display: 'flex', flexDirection: 'column', gap: 20 }}>
 
-        {/* Client Intelligence */}
+        {/* Client Intelligence + Real Insights */}
         {!loading && (() => {
           const signals = computeSignals(client, showings, reactions, deals, prefs)
-          return signals.length > 0 ? <ScorecardCard signals={signals} /> : null
+          return (
+            <>
+              {signals.length > 0 && <ScorecardCard signals={signals} />}
+              <InsightsCard signals={signals} />
+            </>
+          )
         })()}
 
         {/* Visit activity */}

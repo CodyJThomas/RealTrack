@@ -5,6 +5,8 @@ import { createClient } from '@/lib/supabase'
 import BottomNav from '@/components/BottomNav'
 import InfoSheet from '@/components/InfoSheet'
 import { initials, avatarColor } from '@/lib/utils'
+import { computeDashboardSignals, computeInsights } from '@/lib/intelligence'
+import type { Insight } from '@/lib/intelligence'
 
 type ClientRow = {
   id: string
@@ -21,6 +23,12 @@ type ActivityEvent = {
   label: string
   sub?: string
   href?: string
+}
+
+type AttentionItem = {
+  clientId: string
+  clientName: string
+  topInsight: Insight
 }
 
 type Tier = 'hot' | 'warm' | 'stalled' | 'new'
@@ -181,6 +189,7 @@ export default function CapacityDashboard() {
   const [clients, setClients] = useState<ClientStats[]>([])
   const [upcoming, setUpcoming] = useState<UpcomingShowing[]>([])
   const [activity, setActivity] = useState<ActivityEvent[]>([])
+  const [attention, setAttention] = useState<AttentionItem[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -204,11 +213,13 @@ export default function CapacityDashboard() {
         { data: dealData },
         { data: prefsData },
         { data: agentData },
+        { data: reactionData },
       ] = await Promise.all([
-        supabase.from('showings').select('id, client_id, shown_at, address').in('client_id', clientIds),
+        supabase.from('showings').select('id, client_id, shown_at, address, price').in('client_id', clientIds),
         supabase.from('deals').select('id, client_id').in('client_id', clientIds),
         supabase.from('client_preferences').select('client_id, timeline').in('client_id', clientIds),
         supabase.from('agents').select('id, full_name, brokerage, created_at').order('created_at', { ascending: false }).limit(5),
+        supabase.from('showing_reactions').select('showing_id, client_id, overall_reaction').in('client_id', clientIds),
       ])
 
       const dealIds = (dealData ?? []).map((d: { id: string }) => d.id)
@@ -269,6 +280,34 @@ export default function CapacityDashboard() {
 
       setClients(enriched)
 
+      // Build Needs Attention list
+      type ReactionRow = { showing_id: string; client_id: string; overall_reaction: string }
+      const reactionsByShowing: Record<string, string> = {}
+      const reactionsByClient: Record<string, { showing_id: string; shown_at: string; reaction: string }[]> = {}
+      for (const r of (reactionData ?? []) as ReactionRow[]) {
+        reactionsByShowing[r.showing_id] = r.overall_reaction
+        if (!reactionsByClient[r.client_id]) reactionsByClient[r.client_id] = []
+        const showing = (showingData ?? []).find((s: { id: string; shown_at: string }) => s.id === r.showing_id)
+        if (showing) reactionsByClient[r.client_id].push({ showing_id: r.showing_id, shown_at: (showing as { shown_at: string }).shown_at, reaction: r.overall_reaction })
+      }
+
+      const attentionList: AttentionItem[] = []
+      for (const c of enriched) {
+        if (c.tier === 'new') continue
+        const clientReactions = (reactionsByClient[c.id] ?? [])
+          .sort((a, b) => b.shown_at.localeCompare(a.shown_at))
+          .slice(0, 3)
+          .map(r => r.reaction)
+        const signals = computeDashboardSignals(c.visitCount, c.offerCount, c.lastShown, c.timeline, clientReactions)
+        const insights = computeInsights(signals)
+        if (insights.length > 0) {
+          const top = insights.find(i => i.level === 'red') ?? insights[0]
+          attentionList.push({ clientId: c.id, clientName: c.full_name, topInsight: top })
+        }
+      }
+      attentionList.sort((a, b) => (a.topInsight.level === 'red' ? -1 : 1) - (b.topInsight.level === 'red' ? -1 : 1))
+      setAttention(attentionList.slice(0, 4))
+
       // Build activity feed from recent clients, showings, and agents
       type AgentRow = { id: string; full_name: string; brokerage: string | null; created_at: string }
       type ShowingRow2 = { id: string; client_id: string; shown_at: string; address: string }
@@ -310,8 +349,12 @@ export default function CapacityDashboard() {
       })
   }
 
+  const attentionIds = new Set(attention.map(a => a.clientId))
+
   function ClientCard({ c }: { c: ClientStats }) {
     const badge = c.timeline ? timelineBadge(c.timeline) : null
+    const needsAttention = attentionIds.has(c.id)
+    const attentionLevel = attention.find(a => a.clientId === c.id)?.topInsight.level
     return (
       <div onClick={() => router.push(`/clients/${c.id}`)} style={{
         padding: '12px 16px', cursor: 'pointer',
@@ -334,6 +377,15 @@ export default function CapacityDashboard() {
           </div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3, flexShrink: 0 }}>
+          {needsAttention && (
+            <div style={{
+              width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
+              background: attentionLevel === 'red' ? 'var(--danger)' : 'var(--warn)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <span style={{ fontSize: 11, fontWeight: 800, color: '#fff', lineHeight: 1 }}>!</span>
+            </div>
+          )}
           {badge && c.timeline && (
             <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 8, ...badge }}>
               {TIMELINE_LABELS[c.timeline] ?? c.timeline}
@@ -400,6 +452,53 @@ export default function CapacityDashboard() {
         </div>
       ) : (
         <div style={{ paddingTop: 4 }}>
+
+          {/* Needs Attention */}
+          {attention.length > 0 && (
+            <div style={{ marginBottom: 4 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '14px 16px 6px' }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                  stroke="var(--danger)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                </svg>
+                <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--danger)' }}>Needs Attention</span>
+                <span style={{ fontSize: 11, color: 'var(--text3)' }}>{attention.length} client{attention.length !== 1 ? 's' : ''}</span>
+              </div>
+              <div style={{
+                background: 'var(--surface)', border: '1px solid var(--border)',
+                borderRadius: 12, margin: '0 16px', overflow: 'hidden',
+              }}>
+                {attention.map((item, i) => (
+                  <div key={item.clientId}
+                    onClick={() => router.push(`/clients/${item.clientId}`)}
+                    style={{
+                      padding: '11px 16px', cursor: 'pointer',
+                      borderTop: i > 0 ? '1px solid var(--border)' : 'none',
+                      display: 'flex', alignItems: 'center', gap: 10,
+                    }}>
+                    <div style={{
+                      width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
+                      background: avatarColor(item.clientName),
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: '#fff', fontSize: 11, fontWeight: 500,
+                    }}>
+                      {initials(item.clientName)}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text1)' }}>{item.clientName}</div>
+                      <div style={{ fontSize: 11, color: item.topInsight.level === 'red' ? 'var(--danger)' : 'var(--warn)', marginTop: 1 }}>
+                        {item.topInsight.action}
+                      </div>
+                    </div>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                      stroke="var(--text3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* This week */}
           {upcoming.length > 0 && (
