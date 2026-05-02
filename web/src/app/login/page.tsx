@@ -37,11 +37,11 @@ export default function LoginPage() {
 
   return (
     <div style={{
-      minHeight: '100vh', display: 'flex', flexDirection: 'column',
+      marginTop: -36, minHeight: '100vh', display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
       background: '#1B3060', color: '#fff', padding: 24
     }}>
-      <img src="/icon-192.png" alt="RealTrack" style={{ width: 96, height: 96, borderRadius: 20, marginBottom: 16, filter: 'invert(1) brightness(10)' }} />
+      <img src="/icon-192.png" alt="RealTrack" style={{ width: 96, height: 96, borderRadius: 20, marginBottom: 16 }} />
       <p style={{ opacity: 0.8, marginBottom: 32, fontSize: 14 }}>Client intelligence for realtors</p>
       {sent ? (
         <p style={{ textAlign: 'center', opacity: 0.9 }}>Check your email for a login link.</p>
