@@ -32,6 +32,14 @@ const AgentsIcon = ({ active }: { active: boolean }) => (
   </svg>
 )
 
+const ReportsIcon = ({ active: _ }: { active: boolean }) => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+    <rect x="2"  y="14" width="5" height="8" rx="1" />
+    <rect x="9"  y="8"  width="5" height="14" rx="1" />
+    <rect x="16" y="3"  width="5" height="19" rx="1" />
+  </svg>
+)
+
 const SettingsIcon = ({ active }: { active: boolean }) => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
     strokeWidth={active ? 2.2 : 1.8} strokeLinecap="round" strokeLinejoin="round">
@@ -44,6 +52,7 @@ const tabs = [
   { href: '/',         label: 'Dashboard', Icon: DashboardIcon },
   { href: '/clients',  label: 'Clients',   Icon: ClientsIcon   },
   { href: '/agents',   label: 'Agents',    Icon: AgentsIcon    },
+  { href: '/reports',  label: 'Reports',   Icon: ReportsIcon   },
   { href: '/settings', label: 'Settings',  Icon: SettingsIcon  },
 ]
 
