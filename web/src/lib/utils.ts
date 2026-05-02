@@ -1,5 +1,8 @@
 export function initials(name: string): string {
-  return name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
+  const words = name.split(' ').filter(w => w !== '&' && w.length > 0)
+  const first = words[0]?.[0] ?? ''
+  const last  = words[words.length - 1]?.[0] ?? ''
+  return (first === last ? first : first + last).toUpperCase()
 }
 
 export function avatarColor(name: string): string {

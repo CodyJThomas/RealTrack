@@ -50,7 +50,149 @@ type ClientPrefs = {
   must_haves: string[] | null
   dealbreakers: string[] | null
   style_notes: string | null
+  timeline: string | null
 }
+
+// ── Client Intelligence ────────────────────────────────────────────────────
+
+type Signal = {
+  level: 'green' | 'amber' | 'red'
+  label: string
+  detail: string
+}
+
+function daysIdle(dateStr: string): number {
+  return Math.round((Date.now() - new Date(dateStr + 'T12:00:00').getTime()) / 86400000)
+}
+
+function computeSignals(
+  _client: Client,
+  showings: Showing[],
+  reactions: Record<string, string>,
+  deals: Deal[],
+  prefs: ClientPrefs | null,
+): Signal[] {
+  const today = new Date().toISOString().split('T')[0]
+  const pastShowings = showings.filter(s => s.shown_at <= today)
+  const signals: Signal[] = []
+
+  // 1. Momentum — only if 3+ past showings
+  if (pastShowings.length >= 3) {
+    const last3 = [...pastShowings]
+      .sort((a, b) => b.shown_at.localeCompare(a.shown_at))
+      .slice(0, 3)
+    const reactionLabels = last3.map(s => reactions[s.id] ?? null)
+    const positives = reactionLabels.filter(r => r === 'yes' || r === 'strong_yes').length
+    const negatives = reactionLabels.filter(r => r === 'no' || r === 'strong_no').length
+    const detailStr = last3
+      .map(s => reactions[s.id]?.replace('_', ' ') ?? 'no reaction')
+      .join(' → ')
+    if (positives >= 2) {
+      signals.push({ level: 'green', label: 'Building toward offer', detail: `Last 3: ${detailStr}` })
+    } else if (negatives >= 2) {
+      signals.push({ level: 'red', label: 'Needs direction change', detail: `Last 3: ${detailStr}` })
+    } else {
+      signals.push({ level: 'amber', label: 'Mixed signals', detail: `Last 3: ${detailStr}` })
+    }
+  }
+
+  // 2. Visit ratio
+  const visitCount = pastShowings.length
+  const offerCount = deals.reduce((sum, d) => sum + d.offers.length, 0)
+  if (visitCount >= 4) {
+    if (offerCount === 0 && visitCount < 7) {
+      signals.push({ level: 'amber', label: 'High visits, no offer yet', detail: `${visitCount} showings, 0 offers` })
+    } else if (offerCount === 0 && visitCount >= 7) {
+      signals.push({ level: 'red', label: 'High visit-to-offer ratio', detail: `${visitCount} showings, 0 offers` })
+    } else if (offerCount > 0) {
+      signals.push({ level: 'green', label: 'Offer activity on record', detail: `${visitCount} showings, ${offerCount} offer${offerCount !== 1 ? 's' : ''}` })
+    }
+  }
+
+  // 3. Budget alignment — only if price_max and past showings with prices exist
+  if (prefs?.price_max != null) {
+    const pricedShowings = pastShowings.filter(s => s.price != null)
+    if (pricedShowings.length > 0) {
+      const max = prefs.price_max
+      const overBudget = pricedShowings.filter(s => (s.price ?? 0) > max)
+      const fmtMax = `$${max.toLocaleString()}`
+      if (overBudget.length === 0) {
+        signals.push({ level: 'green', label: 'Showing within budget', detail: `All within ${fmtMax}` })
+      } else if (overBudget.length === pricedShowings.length) {
+        signals.push({ level: 'red', label: 'Budget misalignment', detail: `All showings exceed ${fmtMax}` })
+      } else {
+        signals.push({
+          level: 'amber',
+          label: 'Showing above stated budget',
+          detail: `${overBudget.length} of ${pricedShowings.length} showings over budget`,
+        })
+      }
+    }
+  }
+
+  // 4. Timeline — only if prefs?.timeline and past showings exist
+  if (prefs?.timeline && pastShowings.length > 0) {
+    const mostRecent = [...pastShowings].sort((a, b) => b.shown_at.localeCompare(a.shown_at))[0]
+    const idle = daysIdle(mostRecent.shown_at)
+    if (prefs.timeline === 'asap' && idle > 14) {
+      signals.push({ level: 'amber', label: 'ASAP timeline slipping', detail: `Last showing ${idle}d ago` })
+    } else if (prefs.timeline === '1-3 months' && idle > 30) {
+      signals.push({ level: 'amber', label: 'Falling behind timeline', detail: `Last showing ${idle}d ago` })
+    }
+  }
+
+  // 5. Engagement — only if past showings exist
+  if (pastShowings.length > 0) {
+    const mostRecent = [...pastShowings].sort((a, b) => b.shown_at.localeCompare(a.shown_at))[0]
+    const idle = daysIdle(mostRecent.shown_at)
+    const idleLabel =
+      idle === 0 ? 'today' :
+      idle === 1 ? 'yesterday' :
+      `${idle} days ago`
+    if (idle <= 7) {
+      signals.push({ level: 'green', label: 'Highly engaged', detail: `Last showing ${idleLabel}` })
+    } else if (idle >= 31 && idle <= 90) {
+      signals.push({ level: 'amber', label: 'Engagement fading', detail: `Last showing ${idle}d ago` })
+    } else if (idle > 90) {
+      signals.push({ level: 'red', label: 'Stalled', detail: `Last showing ${idleLabel}` })
+    }
+  }
+
+  return signals
+}
+
+function ScorecardCard({ signals }: { signals: Signal[] }) {
+  if (signals.length === 0) return null
+  const dotColor = { green: '#16a34a', amber: '#d97706', red: '#dc2626' }
+  return (
+    <div style={{
+      background: 'var(--surface)', border: '1px solid var(--border)',
+      borderRadius: 12, padding: '14px 16px',
+    }}>
+      <div style={sectionLabel}>Client Intelligence</div>
+      {signals.map((sig, i) => (
+        <div key={i} style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          paddingTop: i === 0 ? 0 : 8, paddingBottom: i === signals.length - 1 ? 0 : 8,
+          borderTop: i === 0 ? 'none' : '1px solid var(--border)',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{
+              width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+              background: dotColor[sig.level],
+            }} />
+            <span style={{ fontSize: 13, fontWeight: 600 }}>{sig.label}</span>
+          </div>
+          <span style={{ fontSize: 12, color: 'var(--text2)', textAlign: 'right', marginLeft: 8 }}>
+            {sig.detail}
+          </span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
 
 function StageBadge({ stage }: { stage: string | null }) {
   if (!stage) return null
@@ -324,6 +466,12 @@ export default function ClientDetailPage() {
       </div>
 
       <div style={{ padding: '16px 16px 0', display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+        {/* Client Intelligence */}
+        {!loading && (() => {
+          const signals = computeSignals(client, showings, reactions, deals, prefs)
+          return signals.length > 0 ? <ScorecardCard signals={signals} /> : null
+        })()}
 
         {/* Visit activity */}
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px' }}>
