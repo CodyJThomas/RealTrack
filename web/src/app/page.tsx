@@ -31,11 +31,50 @@ type UpcomingShowing = {
   shown_at: string
 }
 
-const TIER_CONFIG: Record<Tier, { label: string; desc: string }> = {
-  hot:     { label: '🔥 Hot',      desc: 'Active last 14 days' },
-  warm:    { label: '🌤 Warm',     desc: 'Active last 90 days' },
-  stalled: { label: '⚠️ Stalled',  desc: 'Needs attention' },
-  new:     { label: '○ New',       desc: 'No showings yet' },
+const TIER_CONFIG: Record<Tier, { label: string; desc: string; color: string }> = {
+  hot:     { label: 'Hot',     desc: 'Active last 14 days', color: '#dc2626' },
+  warm:    { label: 'Warm',    desc: 'Active last 90 days', color: '#d97706' },
+  stalled: { label: 'Stalled', desc: 'Needs attention',     color: '#9ca3af' },
+  new:     { label: 'New',     desc: 'No showings yet',     color: 'var(--brand)' },
+}
+
+function TierIcon({ tier }: { tier: Tier }) {
+  if (tier === 'hot') return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2c0 6-6 8-6 14a6 6 0 0 0 12 0c0-6-6-8-6-14z" />
+      <path d="M12 12c0 3-2 4-2 7a2 2 0 0 0 4 0c0-3-2-4-2-7z" fill="#dc2626" stroke="none" />
+    </svg>
+  )
+  if (tier === 'warm') return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+    </svg>
+  )
+  if (tier === 'stalled') return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" />
+      <polyline points="12 6 12 12 16 14" />
+    </svg>
+  )
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" />
+      <line x1="12" y1="8" x2="12" y2="16" />
+      <line x1="8" y1="12" x2="16" y2="12" />
+    </svg>
+  )
+}
+
+function CalendarIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="18" height="18" rx="2" />
+      <line x1="16" y1="2" x2="16" y2="6" />
+      <line x1="8" y1="2" x2="8" y2="6" />
+      <line x1="3" y1="10" x2="21" y2="10" />
+    </svg>
+  )
 }
 
 const TIMELINE_LABELS: Record<string, string> = {
@@ -232,8 +271,9 @@ export default function CapacityDashboard() {
     const cfg = TIER_CONFIG[tier]
     return (
       <div style={{ marginBottom: 4 }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, padding: '14px 16px 6px' }}>
-          <span style={{ fontSize: 13, fontWeight: 700 }}>{cfg.label}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '14px 16px 6px' }}>
+          <TierIcon tier={tier} />
+          <span style={{ fontSize: 13, fontWeight: 700, color: cfg.color }}>{cfg.label}</span>
           <span style={{ fontSize: 11, color: 'var(--text3)' }}>{cfg.desc}</span>
           <span style={{ marginLeft: 'auto', fontSize: 11, fontWeight: 600, color: 'var(--text3)' }}>{list.length}</span>
         </div>
@@ -273,8 +313,9 @@ export default function CapacityDashboard() {
           {/* This week */}
           {upcoming.length > 0 && (
             <div style={{ marginBottom: 4 }}>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, padding: '14px 16px 6px' }}>
-                <span style={{ fontSize: 13, fontWeight: 700 }}>📅 This week</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '14px 16px 6px' }}>
+                <CalendarIcon />
+                <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--brand)' }}>This week</span>
                 <span style={{ fontSize: 11, color: 'var(--text3)' }}>Upcoming showings</span>
               </div>
               <div style={{

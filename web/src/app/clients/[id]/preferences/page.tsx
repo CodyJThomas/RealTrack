@@ -282,7 +282,7 @@ export default function PreferencesPage() {
         display: 'flex', alignItems: 'center', gap: 12,
         position: 'sticky', top: 36, background: 'var(--surface)', zIndex: 10,
       }}>
-        <button onClick={() => router.back()} style={{
+        <button onClick={() => router.push(`/clients/${id}`)} style={{
           background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: 'var(--text2)', padding: '0 4px 0 0',
         }}>←</button>
         <div style={{ flex: 1 }}>
