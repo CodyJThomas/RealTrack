@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import BottomNav from '@/components/BottomNav'
+import InfoSheet from '@/components/InfoSheet'
 import { initials, avatarColor } from '@/lib/utils'
 
 type ClientRow = {
@@ -295,9 +296,15 @@ export default function CapacityDashboard() {
 
   return (
     <div style={{ paddingBottom: 80 }}>
-      <div style={{ padding: '16px 16px 10px', borderBottom: '1px solid var(--border)' }}>
-        <h1 style={{ fontSize: 20, fontWeight: 700 }}>Dashboard</h1>
-        <p style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>{dateLabel}</p>
+      <div style={{ padding: '16px 16px 10px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+        <div>
+          <h1 style={{ fontSize: 20, fontWeight: 700 }}>Dashboard</h1>
+          <p style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>{dateLabel}</p>
+        </div>
+        <InfoSheet
+          title="Capacity Dashboard"
+          body="Your client roster organized by engagement. Hot clients had a showing in the last 14 days. Warm is last 90 days. Stalled clients need attention — no recent activity. New clients have no showings yet. This week shows any showings scheduled in the next 7 days."
+        />
       </div>
 
       {loading ? (

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import BottomNav from '@/components/BottomNav'
+import InfoSheet from '@/components/InfoSheet'
 
 export default function SettingsPage() {
   const [email, setEmail] = useState<string | null>(null)
@@ -23,8 +24,12 @@ export default function SettingsPage() {
 
   return (
     <div style={{ paddingBottom: 80 }}>
-      <div style={{ padding: '16px 16px 8px', borderBottom: '1px solid var(--border)' }}>
+      <div style={{ padding: '16px 16px 8px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <h1 style={{ fontSize: 20, fontWeight: 700 }}>Settings</h1>
+        <InfoSheet
+          title="Settings"
+          body="Manage your account and brokerage profile. Your profile info appears on the dashboard and client-facing views. Contact support to change your brokerage or subscription plan."
+        />
       </div>
       <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
         {email !== null && (

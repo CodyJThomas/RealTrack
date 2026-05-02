@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import BottomNav from '@/components/BottomNav'
 import { Toast } from '@/components/Toast'
+import InfoSheet from '@/components/InfoSheet'
 import type { Client } from '@/lib/types'
 import { initials, avatarColor, sectionLabel, inputStyle, labelStyle, fmtBudget } from '@/lib/utils'
 
@@ -233,8 +234,12 @@ export default function ClientsPage() {
   return (
     <div style={{ paddingBottom: 140 }}>
       {/* Header */}
-      <div style={{ padding: '16px 16px 8px', borderBottom: '1px solid var(--border)' }}>
+      <div style={{ padding: '16px 16px 8px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <h1 style={{ fontSize: 20, fontWeight: 700 }}>Clients</h1>
+        <InfoSheet
+          title="Clients"
+          body="All your active buyers and sellers. Tap a client to view their profile, preference history, and showing reactions. Use the filter chips to surface flagged clients or those requiring a retainer."
+        />
       </div>
 
       {/* Filter chips */}

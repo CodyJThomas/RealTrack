@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import BottomNav from '@/components/BottomNav'
 import { Toast } from '@/components/Toast'
+import InfoSheet from '@/components/InfoSheet'
 import { initials, avatarColor, inputStyle, labelStyle } from '@/lib/utils'
 
 type Agent = {
@@ -160,8 +161,12 @@ export default function AgentsPage() {
 
   return (
     <div style={{ paddingBottom: 140 }}>
-      <div style={{ padding: '16px 16px 8px', borderBottom: '1px solid var(--border)' }}>
+      <div style={{ padding: '16px 16px 8px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <h1 style={{ fontSize: 20, fontWeight: 700 }}>Agents</h1>
+        <InfoSheet
+          title="Agents"
+          body="Manage the agents on your team. Add agents to assign clients and track activity by rep. Each agent gets their own login and sees only their assigned clients."
+        />
       </div>
 
       {loading ? (
