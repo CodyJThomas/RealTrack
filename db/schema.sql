@@ -76,6 +76,8 @@ CREATE TABLE public.clients (
   retainer_required   BOOLEAN NOT NULL DEFAULT FALSE,
   flag_reason         TEXT,        -- NULL = not flagged
   notes               TEXT,
+  pre_approved        BOOLEAN,
+  source              TEXT,        -- 'referral' | 'open house' | 'web' | 'other'
   created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -382,3 +384,30 @@ SELECT id, email, 'free'
 FROM auth.users
 WHERE email = 'your@email.com'  -- remove filter to backfill all users
 ON CONFLICT (id) DO NOTHING;
+
+
+-- ============================================================
+-- MIGRATION 2026-05-01: Preference and showing data model
+-- Applied via Supabase MCP to project bylkcfoqoehkgiiqscvl
+-- ============================================================
+
+-- client_preferences: structured fields for preference matching
+ALTER TABLE public.client_preferences
+  ADD COLUMN IF NOT EXISTS property_types      text[],
+  ADD COLUMN IF NOT EXISTS garage_preference   text,
+  ADD COLUMN IF NOT EXISTS basement_preference text,
+  ADD COLUMN IF NOT EXISTS sqft_min            integer,
+  ADD COLUMN IF NOT EXISTS max_hoa             integer,
+  ADD COLUMN IF NOT EXISTS timeline            text,
+  ADD COLUMN IF NOT EXISTS school_districts    text[];
+
+-- showings: richer property data for future matching/analysis
+ALTER TABLE public.showings
+  ADD COLUMN IF NOT EXISTS property_type text,
+  ADD COLUMN IF NOT EXISTS sqft          integer,
+  ADD COLUMN IF NOT EXISTS year_built    integer;
+
+-- clients: qualification and attribution signals
+ALTER TABLE public.clients
+  ADD COLUMN IF NOT EXISTS pre_approved boolean,
+  ADD COLUMN IF NOT EXISTS source       text;

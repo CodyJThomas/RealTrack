@@ -78,6 +78,7 @@ function ReturnToastHandler({ onToast }: { onToast: (msg: string) => void }) {
   useEffect(() => {
     if (searchParams.get('visit') === 'logged') onToast('Visit logged')
     if (searchParams.get('offer') === 'logged') onToast('Offer logged')
+    if (searchParams.get('prefs') === 'saved') onToast('Preferences saved')
   }, [])
   return null
 }
@@ -98,10 +99,11 @@ export default function ClientDetailPage() {
   const id = params.id as string
   const supabase = createClient()
 
-  const [client,   setClient]   = useState<Client | null>(null)
-  const [prefs,    setPrefs]    = useState<ClientPrefs | null>(null)
-  const [showings, setShowings] = useState<Showing[]>([])
-  const [deals,    setDeals]    = useState<Deal[]>([])
+  const [client,    setClient]    = useState<Client | null>(null)
+  const [prefs,     setPrefs]     = useState<ClientPrefs | null>(null)
+  const [showings,  setShowings]  = useState<Showing[]>([])
+  const [reactions, setReactions] = useState<Record<string, string>>({})
+  const [deals,     setDeals]     = useState<Deal[]>([])
   const [loading,  setLoading]  = useState(true)
   const [updating, setUpdating] = useState(false)
   const [toast,    setToast]    = useState<string | null>(null)
@@ -137,11 +139,13 @@ export default function ClientDetailPage() {
       { data: showingData },
       { data: dealData },
       { data: prefsData },
+      { data: reactionData },
     ] = await Promise.all([
       supabase.from('clients').select('*').eq('id', id).single(),
       supabase.from('showings').select('*').eq('client_id', id).order('shown_at', { ascending: false }),
       supabase.from('deals').select('*').eq('client_id', id),
       supabase.from('client_preferences').select('*').eq('client_id', id).maybeSingle(),
+      supabase.from('showing_reactions').select('showing_id, overall_reaction').eq('client_id', id),
     ])
 
     if (!clientData) { router.push('/clients'); return }
@@ -150,6 +154,12 @@ export default function ClientDetailPage() {
 
     const rawShowings = (showingData ?? []) as Showing[]
     setShowings(rawShowings)
+
+    const reactionMap: Record<string, string> = {}
+    for (const r of (reactionData ?? []) as { showing_id: string; overall_reaction: string }[]) {
+      reactionMap[r.showing_id] = r.overall_reaction
+    }
+    setReactions(reactionMap)
 
     const rawDeals = (dealData ?? []) as Omit<Deal, 'offers'>[]
     if (rawDeals.length > 0) {
@@ -333,16 +343,45 @@ export default function ClientDetailPage() {
           </div>
           {recentShowings.length > 0 && (
             <div>
-              {recentShowings.map((s, i) => (
-                <div key={s.id} style={{
-                  paddingTop: 8, paddingBottom: 8,
-                  borderTop: i === 0 ? '1px solid var(--border)' : 'none',
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
-                }}>
-                  <span style={{ fontSize: 13, color: 'var(--text1)', flex: 1, paddingRight: 8 }}>{s.address}</span>
-                  <span style={{ fontSize: 12, color: 'var(--text3)', whiteSpace: 'nowrap' }}>{fmtDate(s.shown_at)}</span>
-                </div>
-              ))}
+              {recentShowings.map((s, i) => {
+                const reaction = reactions[s.id] ?? null
+                const isUpcoming = new Date(s.shown_at) > new Date()
+                const dotColor =
+                  reaction === 'strong_yes' ? '#16a34a' :
+                  reaction === 'yes'        ? '#65a30d' :
+                  reaction === 'maybe'      ? '#ca8a04' :
+                  reaction === 'no'         ? '#ea580c' :
+                  reaction === 'strong_no'  ? '#dc2626' : null
+                return (
+                  <div key={s.id}
+                    onClick={() => router.push(`/clients/${id}/showings/${s.id}/react`)}
+                    style={{
+                      paddingTop: 8, paddingBottom: 8,
+                      borderTop: i === 0 ? '1px solid var(--border)' : 'none',
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                      cursor: 'pointer',
+                    }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
+                      <div style={{
+                        width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+                        background: dotColor ?? 'var(--border)',
+                        border: dotColor ? 'none' : '1.5px solid var(--text3)',
+                      }} />
+                      <span style={{ fontSize: 13, color: 'var(--text1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {s.address}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, marginLeft: 8 }}>
+                      {isUpcoming && (
+                        <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--brand)', background: 'var(--brand-light)', padding: '2px 6px', borderRadius: 10 }}>
+                          Upcoming
+                        </span>
+                      )}
+                      <span style={{ fontSize: 12, color: 'var(--text3)', whiteSpace: 'nowrap' }}>{fmtDate(s.shown_at)}</span>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           )}
           {recentShowings.length === 0 && (
@@ -392,49 +431,75 @@ export default function ClientDetailPage() {
         </div>
 
         {/* Preferences */}
-        {prefs && (fmtArray(prefs.target_neighborhoods) || fmtArray(prefs.must_haves) || fmtArray(prefs.dealbreakers) || prefs.style_notes || prefs.bedrooms_min || prefs.bathrooms_min) && (
-          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px' }}>
-            <div style={sectionLabel}>Preferences</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {prefs.bedrooms_min && (
-                <div style={{ fontSize: 13 }}>
-                  <span style={{ color: 'var(--text3)', marginRight: 6 }}>Min beds</span>
-                  <span>{prefs.bedrooms_min}+</span>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <span style={sectionLabel as React.CSSProperties}>Preferences</span>
+            <button onClick={() => router.push(`/clients/${id}/preferences`)} style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              fontSize: 13, color: 'var(--brand)', fontWeight: 600, padding: 0,
+            }}>
+              {prefs ? 'Edit' : 'Set up →'}
+            </button>
+          </div>
+          {!prefs ? (
+            <p style={{ fontSize: 13, color: 'var(--text3)' }}>No preferences captured yet.</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {(prefs.bedrooms_min || prefs.bathrooms_min) && (
+                <div style={{ display: 'flex', gap: 16, fontSize: 13 }}>
+                  {prefs.bedrooms_min && (
+                    <span><span style={{ color: 'var(--text3)' }}>Beds </span>{prefs.bedrooms_min}+</span>
+                  )}
+                  {prefs.bathrooms_min && (
+                    <span><span style={{ color: 'var(--text3)' }}>Baths </span>{prefs.bathrooms_min}+</span>
+                  )}
                 </div>
               )}
-              {prefs.bathrooms_min && (
-                <div style={{ fontSize: 13 }}>
-                  <span style={{ color: 'var(--text3)', marginRight: 6 }}>Min baths</span>
-                  <span>{prefs.bathrooms_min}+</span>
+              {prefs.target_neighborhoods && prefs.target_neighborhoods.length > 0 && (
+                <div>
+                  <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 4 }}>Neighborhoods</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                    {prefs.target_neighborhoods.map(n => (
+                      <span key={n} style={{
+                        padding: '3px 9px', borderRadius: 20, fontSize: 12,
+                        background: 'var(--surface3)', color: 'var(--text2)',
+                      }}>{n}</span>
+                    ))}
+                  </div>
                 </div>
               )}
-              {fmtArray(prefs.target_neighborhoods) && (
-                <div style={{ fontSize: 13 }}>
-                  <span style={{ color: 'var(--text3)', marginRight: 6 }}>Neighborhoods</span>
-                  <span>{fmtArray(prefs.target_neighborhoods)}</span>
+              {prefs.must_haves && prefs.must_haves.length > 0 && (
+                <div>
+                  <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 4 }}>Must-haves</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                    {prefs.must_haves.map(m => (
+                      <span key={m} style={{
+                        padding: '3px 9px', borderRadius: 20, fontSize: 12,
+                        background: 'var(--brand-light)', color: 'var(--brand)',
+                      }}>{m}</span>
+                    ))}
+                  </div>
                 </div>
               )}
-              {fmtArray(prefs.must_haves) && (
-                <div style={{ fontSize: 13 }}>
-                  <span style={{ color: 'var(--text3)', marginRight: 6 }}>Must-haves</span>
-                  <span>{fmtArray(prefs.must_haves)}</span>
-                </div>
-              )}
-              {fmtArray(prefs.dealbreakers) && (
-                <div style={{ fontSize: 13 }}>
-                  <span style={{ color: 'var(--text3)', marginRight: 6 }}>Dealbreakers</span>
-                  <span>{fmtArray(prefs.dealbreakers)}</span>
+              {prefs.dealbreakers && prefs.dealbreakers.length > 0 && (
+                <div>
+                  <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 4 }}>Dealbreakers</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                    {prefs.dealbreakers.map(d => (
+                      <span key={d} style={{
+                        padding: '3px 9px', borderRadius: 20, fontSize: 12,
+                        background: '#FEE2E2', color: 'var(--danger)',
+                      }}>{d}</span>
+                    ))}
+                  </div>
                 </div>
               )}
               {prefs.style_notes && (
-                <div style={{ fontSize: 13 }}>
-                  <span style={{ color: 'var(--text3)', marginRight: 6 }}>Style</span>
-                  <span>{prefs.style_notes}</span>
-                </div>
+                <p style={{ fontSize: 13, color: 'var(--text2)', margin: 0 }}>{prefs.style_notes}</p>
               )}
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Notes */}
         {client.notes && (

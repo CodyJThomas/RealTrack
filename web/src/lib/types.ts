@@ -9,6 +9,8 @@ export type Client = {
   retainer_required: boolean
   flag_reason: string | null
   notes: string | null
+  pre_approved: boolean | null
+  source: string | null
   created_at: string
   updated_at: string
   archived_at: string | null
@@ -24,6 +26,9 @@ export type Showing = {
   bathrooms: number | null
   garage: 'none' | 'detached' | 'attached' | null
   basement: boolean
+  property_type: string | null
+  sqft: number | null
+  year_built: number | null
   shown_at: string
   notes: string | null
   created_at: string
@@ -47,7 +52,14 @@ export type ClientPreference = {
   price_max: number | null
   bedrooms_min: number | null
   bathrooms_min: number | null
+  property_types: string[] | null
+  garage_preference: string | null
+  basement_preference: string | null
+  sqft_min: number | null
+  max_hoa: number | null
+  timeline: string | null
   target_neighborhoods: string[] | null
+  school_districts: string[] | null
   must_haves: string[] | null
   dealbreakers: string[] | null
   style_notes: string | null

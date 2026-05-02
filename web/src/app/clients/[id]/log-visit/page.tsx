@@ -30,6 +30,7 @@ const GARAGE_OPTIONS: { label: string; value: 'none' | 'detached' | 'attached' }
   { label: 'Detached',   value: 'detached' },
   { label: 'Attached',   value: 'attached' },
 ]
+const PROPERTY_TYPE_OPTIONS = ['Single family', 'Townhouse', 'Condo', 'Ranch', 'Two-story', 'Split-level', 'New construction']
 
 export default function LogShowingPage() {
   const router = useRouter()
@@ -41,17 +42,20 @@ export default function LogShowingPage() {
   const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
   const tomorrow  = new Date(Date.now() + 86400000).toISOString().split('T')[0]
 
-  const [clientName,  setClientName]  = useState('')
-  const [address,     setAddress]     = useState('')
-  const [visitDate,   setVisitDate]   = useState(today)
-  const [price,       setPrice]       = useState('')
-  const [bedrooms,    setBedrooms]    = useState('')
-  const [bathrooms,   setBathrooms]   = useState('')
-  const [garage,      setGarage]      = useState<'none' | 'detached' | 'attached' | ''>('')
-  const [basement,    setBasement]    = useState(false)
-  const [notes,       setNotes]       = useState('')
-  const [saving,      setSaving]      = useState(false)
-  const [error,       setError]       = useState<string | null>(null)
+  const [clientName,    setClientName]    = useState('')
+  const [address,       setAddress]       = useState('')
+  const [visitDate,     setVisitDate]     = useState(today)
+  const [price,         setPrice]         = useState('')
+  const [bedrooms,      setBedrooms]      = useState('')
+  const [bathrooms,     setBathrooms]     = useState('')
+  const [garage,        setGarage]        = useState<'none' | 'detached' | 'attached' | ''>('')
+  const [basement,      setBasement]      = useState(false)
+  const [propertyType,  setPropertyType]  = useState('')
+  const [sqft,          setSqft]          = useState('')
+  const [yearBuilt,     setYearBuilt]     = useState('')
+  const [notes,         setNotes]         = useState('')
+  const [saving,        setSaving]        = useState(false)
+  const [error,         setError]         = useState<string | null>(null)
   const [recentAddresses, setRecentAddresses] = useState<string[]>([])
   const [addressFromChip, setAddressFromChip] = useState(false)
 
@@ -84,26 +88,35 @@ export default function LogShowingPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push('/login'); return }
 
-    const { error: insertError } = await supabase.from('showings').insert({
-      client_id: id,
-      user_id:   user.id,
-      address:   address.trim(),
-      shown_at:  new Date(visitDate).toISOString(),
-      price:     price    ? parseInt(price.replace(/,/g, ''), 10)  : null,
-      bedrooms:  bedrooms ? parseInt(bedrooms, 10)                 : null,
-      bathrooms: bathrooms === '3+' ? 3 : bathrooms ? parseFloat(bathrooms) : null,
-      garage:    garage   || null,
+    const { data: inserted, error: insertError } = await supabase.from('showings').insert({
+      client_id:     id,
+      user_id:       user.id,
+      address:       address.trim(),
+      shown_at:      visitDate,
+      price:         price       ? parseInt(price.replace(/,/g, ''), 10)  : null,
+      bedrooms:      bedrooms    ? parseInt(bedrooms, 10)                  : null,
+      bathrooms:     bathrooms === '3+' ? 3 : bathrooms ? parseFloat(bathrooms) : null,
+      garage:        garage      || null,
       basement,
-      notes:     notes.trim() || null,
-    })
+      property_type: propertyType || null,
+      sqft:          sqft        ? parseInt(sqft.replace(/,/g, ''), 10)   : null,
+      year_built:    yearBuilt   ? parseInt(yearBuilt, 10)                 : null,
+      notes:         notes.trim() || null,
+    }).select('id').single()
 
-    if (insertError) {
+    if (insertError || !inserted) {
       setError('Failed to save. Please try again.')
       setSaving(false)
       return
     }
 
-    router.push(`/clients/${id}?visit=logged`)
+    // Skip reaction capture for future-dated showings
+    const isUpcoming = new Date(visitDate) > new Date()
+    if (isUpcoming) {
+      router.push(`/clients/${id}?visit=logged`)
+    } else {
+      router.push(`/clients/${id}/showings/${inserted.id}/react`)
+    }
   }
 
   return (
@@ -196,15 +209,15 @@ export default function LogShowingPage() {
           <div style={{ position: 'relative' }}>
             <span style={{
               position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)',
-              color: 'var(--text3)', fontSize: 15, pointerEvents: 'none',
+              color: price ? 'var(--text1)' : 'var(--text3)', fontSize: 15, pointerEvents: 'none',
             }}>$</span>
             <input
               style={{ ...inputStyle, paddingLeft: 24 }}
               type="text"
               inputMode="numeric"
               placeholder="450,000"
-              value={price}
-              onChange={e => setPrice(e.target.value)}
+              value={price ? parseInt(price.replace(/\D/g, '') || '0', 10).toLocaleString('en-US') : ''}
+              onChange={e => setPrice(e.target.value.replace(/\D/g, ''))}
             />
           </div>
         </div>
@@ -231,6 +244,17 @@ export default function LogShowingPage() {
           </div>
         </div>
 
+        {/* Property type */}
+        <div>
+          <label style={labelStyle}>Property type</label>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {PROPERTY_TYPE_OPTIONS.map(v => (
+              <Chip key={v} label={v} active={propertyType === v}
+                onClick={() => setPropertyType(propertyType === v ? '' : v)} />
+            ))}
+          </div>
+        </div>
+
         {/* Garage */}
         <div>
           <label style={labelStyle}>Garage</label>
@@ -247,6 +271,20 @@ export default function LogShowingPage() {
           <label style={labelStyle}>Basement</label>
           <Chip label={basement ? 'Yes — has basement' : 'No basement'}
             active={basement} onClick={() => setBasement(!basement)} />
+        </div>
+
+        {/* Sqft + Year built */}
+        <div style={{ display: 'flex', gap: 10 }}>
+          <div style={{ flex: 1 }}>
+            <label style={labelStyle}>Sq ft <span style={{ color: 'var(--text3)', fontWeight: 400 }}>(optional)</span></label>
+            <input style={inputStyle} type="text" inputMode="numeric" placeholder="1,800"
+              value={sqft} onChange={e => setSqft(e.target.value)} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <label style={labelStyle}>Year built <span style={{ color: 'var(--text3)', fontWeight: 400 }}>(optional)</span></label>
+            <input style={inputStyle} type="text" inputMode="numeric" placeholder="2005"
+              value={yearBuilt} onChange={e => setYearBuilt(e.target.value)} />
+          </div>
         </div>
 
         {/* Notes */}

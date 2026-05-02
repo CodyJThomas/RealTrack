@@ -1,4 +1,5 @@
 'use client'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 
 const HIDDEN_ON = ['/login']
@@ -15,7 +16,7 @@ export default function TopBar() {
       display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
       padding: '0 16px',
     }}>
-      <img src="/icon-192.png" alt="RealTrack" style={{ height: 24, width: 24, borderRadius: 6 }} />
+      <Image src="/rt-mark.png" alt="RealTrack" width={24} height={24} style={{ objectFit: 'contain' }} />
     </div>
   )
 }
