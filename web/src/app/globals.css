@@ -44,3 +44,7 @@ a { transition: opacity 0.1s ease; }
 a:active { opacity: 0.65; }
 [data-pressable] { cursor: pointer; transition: opacity 0.1s ease; }
 [data-pressable]:active { opacity: 0.65; }
+.logo-adaptive { filter: none; }
+@media (prefers-color-scheme: dark) {
+  .logo-adaptive { filter: invert(1) brightness(10); }
+}

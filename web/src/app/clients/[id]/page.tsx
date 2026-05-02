@@ -785,6 +785,14 @@ export default function ClientDetailPage() {
             Log offer
           </a>
         </div>
+        <a href={`/clients/${id}/score`} style={{
+          display: 'block', padding: '12px 16px', borderRadius: 8,
+          background: 'var(--surface3)', color: 'var(--text1)',
+          border: '1px solid var(--border)', fontSize: 14, fontWeight: 600, cursor: 'pointer',
+          textDecoration: 'none', textAlign: 'center',
+        }}>
+          Score a Property
+        </a>
 
         {/* Danger zone */}
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px' }}>

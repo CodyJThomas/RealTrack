@@ -16,7 +16,7 @@ export default function TopBar() {
       display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
       padding: '0 16px',
     }}>
-      <Image src="/rt-mark.png" alt="RealTrack" width={24} height={24} style={{ objectFit: 'contain' }} />
+      <Image src="/rt-mark.png" alt="RealTrack" width={24} height={24} className="logo-adaptive" style={{ objectFit: 'contain' }} />
     </div>
   )
 }
